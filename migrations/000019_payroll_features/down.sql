@@ -1,0 +1,21 @@
+DROP TABLE IF EXISTS payroll_report_exports CASCADE;
+DROP TABLE IF EXISTS payroll_report_templates CASCADE;
+DROP TABLE IF EXISTS accounting_entries CASCADE;
+DROP TABLE IF EXISTS accounting_exports CASCADE;
+DROP TABLE IF EXISTS accounting_account_mappings CASCADE;
+DROP TABLE IF EXISTS bank_batch_items CASCADE;
+DROP TABLE IF EXISTS bank_batches CASCADE;
+DROP TABLE IF EXISTS payroll_book_exports CASCADE;
+DROP TABLE IF EXISTS payroll_book_entries CASCADE;
+DROP TABLE IF EXISTS arca_exports CASCADE;
+DROP TABLE IF EXISTS arca_concept_mappings CASCADE;
+DROP TABLE IF EXISTS payroll_receipt_items CASCADE;
+DROP TABLE IF EXISTS payroll_receipts CASCADE;
+DROP TABLE IF EXISTS payroll_receipt_templates CASCADE;
+
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.receipt.%';
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.arca.%';
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.book.%';
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.bank.%';
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.accounting.%';
+DELETE FROM role_permissions WHERE module='payroll' AND name LIKE 'payroll.report.%';

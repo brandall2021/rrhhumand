@@ -1,0 +1,23 @@
+DROP TABLE IF EXISTS payroll_audit_logs CASCADE;
+DROP TABLE IF EXISTS payroll_errors CASCADE;
+DROP TABLE IF EXISTS payroll_withholdings CASCADE;
+DROP TABLE IF EXISTS payroll_garnishments CASCADE;
+DROP TABLE IF EXISTS employee_advances CASCADE;
+DROP TABLE IF EXISTS payroll_limits CASCADE;
+DROP TABLE IF EXISTS statutory_minimum_wages CASCADE;
+DROP TABLE IF EXISTS salary_scales CASCADE;
+DROP TABLE IF EXISTS labor_categories CASCADE;
+DROP TABLE IF EXISTS labor_agreements CASCADE;
+DROP TABLE IF EXISTS payroll_contributions CASCADE;
+DROP TABLE IF EXISTS payroll_deductions CASCADE;
+DROP TABLE IF EXISTS payroll_bases CASCADE;
+DROP TABLE IF EXISTS payroll_items CASCADE;
+DROP TABLE IF EXISTS payroll_novelties CASCADE;
+DROP TABLE IF EXISTS payroll_rules CASCADE;
+DROP TABLE IF EXISTS payroll_concepts CASCADE;
+DROP TABLE IF EXISTS payroll_employee_snapshots CASCADE;
+DROP TABLE IF EXISTS payroll_run_employees CASCADE;
+DROP TABLE IF EXISTS payroll_runs CASCADE;
+DROP TABLE IF EXISTS payroll_periods CASCADE;
+
+DELETE FROM role_permissions WHERE module = 'payroll';

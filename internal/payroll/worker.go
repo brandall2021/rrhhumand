@@ -2,59 +2,68 @@ package payroll
 
 import (
 	"context"
-
-	"github.com/rrhhumand/api/pkg/logger"
+	"log"
+	"time"
 )
 
 type Worker struct {
-	service *Service
+	svc    *Service
+	repo   *Repository
+	stopCh chan struct{}
+	doneCh chan struct{}
 }
 
-func NewWorker(service *Service) *Worker {
-	return &Worker{service: service}
-}
-
-func (w *Worker) ValidatePeriods(ctx context.Context, companyID string) {
-	periods, err := w.service.ListPeriods(ctx, companyID)
-	if err != nil {
-		logger.Errorf("Failed to list periods for validation", logger.Err(err))
-		return
+func NewWorker(svc *Service, repo *Repository) *Worker {
+	return &Worker{
+		svc:    svc,
+		repo:   repo,
+		stopCh: make(chan struct{}),
+		doneCh: make(chan struct{}),
 	}
+}
 
-	for _, period := range periods {
-		if period.Status == "OPEN" {
-			logger.Info("Open payroll period detected",
-				logger.String("period_id", period.ID),
-				logger.String("period_name", period.Name),
-			)
+func (w *Worker) Start(interval time.Duration) {
+	go w.run(interval)
+}
+
+func (w *Worker) Stop() {
+	close(w.stopCh)
+	<-w.doneCh
+}
+
+func (w *Worker) run(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	defer close(w.doneCh)
+
+	w.checkPendingRuns()
+	w.checkOpenPeriods()
+
+	for {
+		select {
+		case <-w.stopCh:
+			log.Println("[payroll-worker] stopping")
+			return
+		case <-ticker.C:
+			w.checkPendingRuns()
+			w.checkOpenPeriods()
 		}
 	}
 }
 
-func (w *Worker) CheckPendingBonuses(ctx context.Context, companyID string) {
-	bonuses, err := w.service.ListBonuses(ctx, companyID, PayrollFilters{Status: "PENDING"})
-	if err != nil {
-		logger.Errorf("Failed to check pending bonuses", logger.Err(err))
-		return
-	}
-	if len(bonuses) > 0 {
-		logger.Info("Pending bonuses detected",
-			logger.String("company_id", companyID),
-			logger.Int("count", len(bonuses)),
-		)
-	}
+func (w *Worker) checkPendingRuns() {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// Future: process queue-based calculation jobs
+	// For now, placeholder for async calculation logic
+	log.Println("[payroll-worker] checking pending runs")
 }
 
-func (w *Worker) CheckPendingAdvances(ctx context.Context, companyID string) {
-	advances, err := w.service.ListAdvances(ctx, companyID, PayrollFilters{Status: "PENDING"})
-	if err != nil {
-		logger.Errorf("Failed to check pending advances", logger.Err(err))
-		return
-	}
-	if len(advances) > 0 {
-		logger.Info("Pending advances detected",
-			logger.String("company_id", companyID),
-			logger.Int("count", len(advances)),
-		)
-	}
+func (w *Worker) checkOpenPeriods() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Future: auto-close periods past end_date without activity
+	log.Println("[payroll-worker] checking open periods")
 }

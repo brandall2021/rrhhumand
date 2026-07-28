@@ -1,0 +1,25 @@
+DROP TABLE IF EXISTS expense_notification_log;
+DROP TABLE IF EXISTS expense_integration_logs;
+DROP TABLE IF EXISTS expense_audit_logs;
+DROP TABLE IF EXISTS corporate_card_transactions;
+DROP TABLE IF EXISTS corporate_cards;
+DROP TABLE IF EXISTS expense_budgets;
+DROP TABLE IF EXISTS daily_allowance_rules;
+DROP TABLE IF EXISTS expense_approvals;
+DROP TABLE IF EXISTS expense_workflow_steps;
+DROP TABLE IF EXISTS expense_workflows;
+DROP TABLE IF EXISTS expense_policy_rules;
+DROP TABLE IF EXISTS expense_policies;
+DROP TABLE IF EXISTS expense_duplicate_checks;
+DROP TABLE IF EXISTS expense_receipts;
+DROP TABLE IF EXISTS expense_reimbursements;
+DROP TABLE IF EXISTS expense_advances;
+DROP TABLE IF EXISTS expense_reports;
+DROP TABLE IF EXISTS travel_participants;
+DROP TABLE IF EXISTS travels;
+DROP TABLE IF EXISTS expenses;
+DROP TABLE IF EXISTS exchange_rates;
+DROP TABLE IF EXISTS expense_payment_methods;
+DROP TABLE IF EXISTS expense_categories;
+
+DELETE FROM role_permissions WHERE module = 'expenses';

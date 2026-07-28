@@ -362,195 +362,120 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ---
 
-### FASE 15 — Reclutamiento y Selección (ATS)
+### FASE 22 — Reclutamiento y Selección (ATS) — Completo
 
-**Objetivo**: Applicant Tracking System integrado que gestiona el proceso completo desde la detección de necesidad hasta la contratación.
+**Objetivo**: Applicant Tracking System completo con arquitectura en capas, IA integrada y pipeline full lifecycle desde la necesidad hasta la contratación.
+
+#### Arquitectura del Módulo
+
+```
+internal/recruitment/
+├── domain/          # 18 entidades de negocio
+├── repository/      # 16 repositorios PostgreSQL (pgx)
+├── application/     # 15 servicios de aplicación
+├── engine/          # 4 motores de negocio (scoring, matching, ofertas, workflows)
+├── ai/              # 4 archivos (cliente, prompts, config, provider)
+├── integration/     # 3 adapters + cliente base + calendario + email
+├── http/            # 17 handlers REST
+├── worker.go        # Worker de expiración
+└── router.go        # Registro de rutas
+```
 
 #### Pipeline de Reclutamiento
 ```
-NECESIDAD DE PERSONAL
-        ↓
-SOLICITUD DE VACANTE
-        ↓
-APROBACIÓN
-        ↓
-PUBLICACIÓN
-        ↓
-POSTULACIÓN
-        ↓
-CANDIDATO
-        ↓
-SCREENING
-        ↓
-ENTREVISTAS
-        ↓
-EVALUACIONES
-        ↓
-SELECCIÓN
-        ↓
-OFERTA
-        ↓
-ACEPTACIÓN
-        ↓
-CONTRATACIÓN
-        ↓
-FASE 16 — ONBOARDING
-        ↓
-FASE 3 — EMPLEADO
+REQUISITION → APPROVAL → POSITION → POSTING → APPLICATION
+→ SCREENING → INTERVIEW → ASSESSMENT → OFFER → HIRING → ONBOARDING
 ```
 
-#### Pipeline de Candidatos (Kanban)
-```
-NEW → SCREENING → PHONE_INTERVIEW → TECHNICAL_INTERVIEW → HR_INTERVIEW → ASSESSMENT → FINALIST → OFFER → HIRED
-```
-Con estados de salida: `REJECTED`, `WITHDRAWN`, `ON_HOLD`
-
-#### Módulos Implementados
-
-| # | Módulo | Descripción |
-|---|--------|-------------|
-| 1 | Solicitud de vacante | Crear requisiciones con puesto, departamento, salario, etc. |
-| 2 | Aprobación de vacante | Workflow configurable (DRAFT → PENDING_APPROVAL → APPROVED → OPEN) |
-| 3 | Puestos abiertos | Publicaciones de trabajo con requisitos y responsabilidades |
-| 4 | Publicación de ofertas | Publicar en múltiples canales (abstracción JobBoardProvider) |
-| 5 | Portal de candidatos | Endpoints públicos para candidatos |
-| 6 | Candidatos | CRUD completo con deduplicación por email |
-| 7 | CV/documentos | Almacenamiento de CVs con parsed_data JSONB |
-| 8 | Screening | Preguntas configurables por vacante (BOOLEAN, TEXT, NUMBER, SELECT) |
-| 9 | Pipeline | Movimiento de etapas con validación de transiciones |
-| 10 | Entrevistas | Programación con entrevistador, tipo, fecha, modalidad |
-| 11 | Evaluaciones | Evaluaciones técnicas con score y duración |
-| 12 | Feedback | Score, comentarios y recomendación (STRONG_YES a STRONG_NO) |
-| 13 | Matching | Engine de matching candidato-vacante (stub para IA) |
-| 14 | Ranking | Ranking ponderado de candidatos (stub para IA) |
-| 15 | Oferta laboral | Crear, enviar, aceptar/rechazar con salary (amount/currency/period) |
-| 16 | Aprobación de contratación | Workflow de aprobación de ofertas |
-| 17 | Conversión candidato → empleado | Integración con FASE 3 para crear empleado |
-| 18 | Estadísticas | Dashboard: vacantes abiertas, candidatos, entrevistas, ofertas, hires |
-| 19 | Notificaciones | Eventos del módulo (stub para FASE 16) |
-| 20 | Auditoría | Log de acciones por usuario, candidato y empresa |
-
-#### API REST — 36 Endpoints
-
-**Vacantes**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/v1/recruitment/requisitions` | Listar requisiciones |
-| POST | `/api/v1/recruitment/requisitions` | Crear requisición |
-| GET | `/api/v1/recruitment/requisitions/:id` | Obtener requisición |
-| PUT | `/api/v1/recruitment/requisitions/:id` | Actualizar requisición |
-| POST | `/api/v1/recruitment/requisitions/:id/submit` | Enviar a aprobación |
-| POST | `/api/v1/recruitment/requisitions/:id/approve` | Aprobar requisición |
-| POST | `/api/v1/recruitment/requisitions/:id/open` | Abrir para contratación |
-| POST | `/api/v1/recruitment/requisitions/:id/close` | Cerrar requisición |
-
-**Publicaciones**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/v1/recruitment/jobs` | Listar publicaciones |
-| POST | `/api/v1/recruitment/jobs` | Crear publicación |
-| GET | `/api/v1/recruitment/jobs/:id` | Obtener publicación |
-| POST | `/api/v1/recruitment/jobs/:id/publish` | Publicar |
-| POST | `/api/v1/recruitment/jobs/:id/close` | Cerrar publicación |
-
-**Candidatos**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/v1/recruitment/candidates` | Listar candidatos |
-| POST | `/api/v1/recruitment/candidates` | Crear candidato |
-| GET | `/api/v1/recruitment/candidates/:id` | Obtener candidato |
-| PUT | `/api/v1/recruitment/candidates/:id` | Actualizar candidato |
-
-**Postulaciones**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/recruitment/applications` | Crear postulación |
-| GET | `/api/v1/recruitment/applications/:id` | Obtener postulación |
-| GET | `/api/v1/recruitment/applications` | Listar postulaciones |
-| POST | `/api/v1/recruitment/applications/:id/stage` | Mover de etapa |
-| POST | `/api/v1/recruitment/applications/:id/reject` | Rechazar |
-| POST | `/api/v1/recruitment/applications/:id/withdraw` | Retirar postulación |
-| GET | `/api/v1/recruitment/applications/:id/history` | Historial de etapas |
-| POST | `/api/v1/recruitment/applications/:id/hire` | Convertir a empleado |
-
-**Entrevistas**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/recruitment/interviews` | Crear entrevista |
-| GET | `/api/v1/recruitment/interviews` | Listar entrevistas |
-| GET | `/api/v1/recruitment/interviews/:id` | Obtener entrevista |
-| PUT | `/api/v1/recruitment/interviews/:id` | Actualizar entrevista |
-| POST | `/api/v1/recruitment/interviews/:id/feedback` | Enviar feedback |
-| GET | `/api/v1/recruitment/interviews/:id/feedback` | Listar feedback |
-
-**Evaluaciones y Screening**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/recruitment/assessments` | Crear evaluación técnica |
-| GET | `/api/v1/recruitment/assessments/:id` | Listar evaluaciones |
-| POST | `/api/v1/recruitment/screening` | Crear pregunta de screening |
-| GET | `/api/v1/recruitment/screening/:id` | Listar preguntas |
-
-**Ofertas**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/recruitment/offers` | Crear oferta |
-| GET | `/api/v1/recruitment/offers/:id` | Obtener oferta |
-| POST | `/api/v1/recruitment/offers/:id/send` | Enviar oferta |
-| POST | `/api/v1/recruitment/offers/:id/accept` | Aceptar oferta |
-| POST | `/api/v1/recruitment/offers/:id/reject` | Rechazar oferta |
-
-**Referidos y Dashboard**
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/v1/recruitment/referrals` | Crear referido |
-| GET | `/api/v1/recruitment/referrals` | Listar referidos |
-| GET | `/api/v1/recruitment/dashboard` | Dashboard de reclutamiento |
-
-#### Base de Datos — 17 Tablas
+#### Tablas — 32+
 
 | Tabla | Descripción |
 |-------|-------------|
-| `job_requisitions` | Solicitudes de vacante |
-| `approval_workflows` | Workflows de aprobación configurables |
-| `approval_steps` | Pasos del workflow |
-| `approval_instances` | Instancias de aprobación reales |
-| `job_postings` | Publicaciones de trabajo |
-| `candidates` | Candidatos (unique por email+empresa) |
+| `job_requisitions` | Solicitudes de vacante con skills, approval workflow |
+| `requisition_skills` | Skills requeridas por requisición |
+| `requisition_approvals` | Aprobaciones de requisición |
+| `positions` | Puestos abiertos (independiente de requisición) |
+| `position_skills` | Skills requeridas por puesto |
+| `job_postings` | Publicaciones con multiplataforma |
+| `posting_board_posts` | Posts en boards externos (LinkedIn, Indeed, etc.) |
+| `posting_screening_questions` | Preguntas de screening por posting |
+| `candidates` | Candidatos con datos personales, CV, skills |
+| `candidate_education` | Historial educativo |
+| `candidate_experience` | Experiencia laboral |
+| `candidate_skills` | Habilidades del candidato |
+| `candidate_certifications` | Certificaciones |
+| `candidate_languages` | Idiomas |
+| `candidate_documents` | Documentos adjuntos |
+| `candidate_parsed_data` | Datos parseados del CV (JSONB) |
 | `applications` | Postulaciones candidato → publicación |
-| `candidate_stage_history` | Historial de movimientos de etapa |
-| `candidate_documents` | CVs y documentos con parsed_data JSONB |
-| `screening_questions` | Preguntas de screening por publicación |
-| `screening_answers` | Respuestas de screening |
+| `application_stage_history` | Historial de movimientos de etapa |
+| `application_ratings` | Calificaciones de la postulación |
+| `application_notes` | Notas internas |
+| `application_screening_answers` | Respuestas a screening |
 | `interviews` | Entrevistas programadas |
-| `interview_feedback` | Feedback de entrevistadores |
+| `interview_panel_members` | Miembros del panel |
+| `interview_feedback` | Feedback con score y recomendación |
+| `interview_feedback_questions` | Respuestas a preguntas de feedback |
 | `assessments` | Evaluaciones técnicas |
-| `job_offers` | Ofertas laborales |
-| `employee_referrals` | Programa de referidos |
-| `recruitment_audit_log` | Auditoría de acciones |
+| `assessment_sections` | Secciones de evaluación |
+| `assessment_results` | Resultados detallados |
+| `offers` | Ofertas laborales |
+| `offer_approvals` | Aprobaciones de oferta |
+| `offer_negotiations` | Negociaciones salariales |
+| `offer_documents` | Documentos de oferta |
+| `hiring_processes` | Procesos de contratación post-aceptación |
+| `hiring_process_tasks` | Tareas de contratación (background check, médico, docs) |
+| `hiring_process_documents` | Documentos del proceso |
+| `talent_pools` | Pool de talento |
+| `talent_pool_candidates` | Candidatos en pool |
+| `referral_rewards` | Recompensas por referidos |
+| `recruitment_sources` | Fuentes de reclutamiento |
+| `recruitment_stages` | Etapas del pipeline |
+| `recruitment_stage_transitions` | Transiciones permitidas |
+| `rejection_reasons` | Motivos de rechazo |
+| `scoring_models` | Modelos de scoring |
+| `scoring_criteria` | Criterios de scoring |
+| `matching_results` | Resultados de matching |
+| `email_templates` | Plantillas de email |
+| `email_log` | Log de envíos |
+| `workflows` | Workflows configurables |
+| `workflow_stages` | Etapas de workflow |
+| `workflow_rules` | Reglas de workflow |
+| `dashboard_cache` | Cache de dashboard |
 
-#### RBAC — 9 Permisos
+#### IA Integrada
 
-| Permiso | Descripción |
-|---------|-------------|
-| `recruitment.read` | Ver datos de reclutamiento |
-| `recruitment.create_requisition` | Crear requisiciones |
-| `recruitment.approve_requisition` | Aprobar requisiciones |
-| `recruitment.manage_postings` | Gestionar publicaciones |
-| `recruitment.manage_candidates` | Gestionar candidatos |
-| `recruitment.conduct_interviews` | Realizar entrevistas |
-| `recruitment.create_offers` | Crear ofertas |
-| `recruitment.hire` | Contratar candidatos |
-| `recruitment.analytics` | Ver analytics y dashboard |
+| Componente | Descripción |
+|------------|-------------|
+| `ai/client.go` | Cliente LLM genérico (OpenAI-compatible) |
+| `ai/prompts.go` | Prompts para CV parsing, matching y ranking |
+| `ai/config.go` | Configuración de proveedor IA |
+| `ai/provider.go` | Provider interface extensible |
 
-#### Worker
-- Cierra automáticamente publicaciones con `closing_at` vencido
-- Expira ofertas con `response_deadline` vencido
+| Módulo AI | Descripción |
+|--------|-------------|
+| CV Parsing | Extracción estructurada de skills, experiencia, educación desde CV |
+| Matching semántico | Match candidate-position usando embeddings semánticos |
+| Ranking IA | Ranking con justificación en lenguaje natural |
+| Scoring | Scoring engine con criterios ponderados configurables |
+
+#### Workers
+
+| Worker | Descripción |
+|--------|-------------|
+| Auto-close postings | Cierra publicaciones con `closing_at` vencido |
+| Expire offers | Expira ofertas con `response_deadline` vencido |
 
 #### Integraciones
-- **FASE 3 (Empleados)**: Conversión automática candidato → empleado al aceptar oferta
-- **FASE 16 (Onboarding)**: Evento `candidate.hired` para trigger de checklist
-- **IA (FASE 19)**: Puntos de extensión para CV Parser, Matching y Ranking
+
+| Integración | Tipo | Descripción |
+|-------------|------|-------------|
+| Job Boards | Adapter | LinkedIn, Indeed, Computrabajo (extensible) |
+| AI Providers | Provider | OpenAI, Claude, Gemini (extensible) |
+| Calendar | Sync | Google Calendar, Outlook |
+| Email | SMTP | Notificaciones con templates configurables |
+| FASE 3 (Empleados) | Event | Conversión candidato → empleado |
+| FASE 16 (Onboarding) | Event | Trigger de checklist al contratar |
 
 ---
 
@@ -573,23 +498,26 @@ Con estados de salida: `REJECTED`, `WITHDRAWN`, `ON_HOLD`
 | 12 | Horas Extras y Compensaciones | ✅ Completada |
 | 13 | Nómina, Compensaciones Económicas y Beneficios | ✅ Completada |
 | 14 | Evaluación de Desempeño | ✅ Completada |
-| 15 | Reclutamiento y Selección (ATS) | ✅ Completada |
-| 16 | Onboarding | ⏳ Pendiente |
+| 15 | Reclutamiento y Selección (ATS) | ⏳ Reemplazada por FASE 22 |
+| 16 | Onboarding | ✅ Completada |
 | 17 | Notificaciones | ⏳ Pendiente |
 | 18 | Reportes | ⏳ Pendiente |
-| 19 | IA | ⏳ Pendiente |
-| 20 | Integraciones | ⏳ Pendiente |
+| 19 | IA General | ⏳ Pendiente |
+| 19b | Payroll Features (Recibos, ARC, Libros, Bancos, Contab., Reportes) | ✅ Completada |
+| 20 | Benefits & Total Rewards | ✅ Completada |
+| 21 | Expenses & Travel | ✅ Completada |
+| 22 | Reclutamiento y Selección (ATS Completo) | ✅ Completada |
 
 ## Estadísticas del Proyecto
 
 | Métrica | Valor |
 |---------|-------|
-| Fases completadas | 16 / 21 |
-| Archivos Go | 80+ |
-| Tablas PostgreSQL | 90+ |
-| Endpoints API | 250+ |
-| Permisos RBAC | 120+ |
-| Líneas de código | 25,000+ |
+| Fases completadas | 20 / 23 |
+| Archivos Go | 120+ |
+| Tablas PostgreSQL | 150+ |
+| Endpoints API | 350+ |
+| Permisos RBAC | 150+ |
+| Líneas de código | 40,000+ |
 
 ## Licencia
 

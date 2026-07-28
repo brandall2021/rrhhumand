@@ -1,0 +1,13 @@
+DELETE FROM permissions WHERE resource = 'payroll';
+DROP TABLE IF EXISTS payroll_snapshots;
+DROP TABLE IF EXISTS payroll_ledger;
+DROP TABLE IF EXISTS payroll_adjustments;
+DROP TABLE IF EXISTS payroll_deductions;
+DROP TABLE IF EXISTS payroll_advances;
+DROP TABLE IF EXISTS payroll_bonuses;
+DROP TABLE IF EXISTS employee_benefits;
+DROP TABLE IF EXISTS benefits;
+DROP TABLE IF EXISTS payroll_items;
+DROP TABLE IF EXISTS employee_compensations;
+DROP TABLE IF EXISTS payroll_concepts;
+DROP TABLE IF EXISTS payroll_periods;

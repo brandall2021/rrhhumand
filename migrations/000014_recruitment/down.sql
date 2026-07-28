@@ -1,0 +1,18 @@
+DROP TABLE IF EXISTS recruitment_audit_log;
+DROP TABLE IF EXISTS employee_referrals;
+DROP TABLE IF EXISTS job_offers;
+DROP TABLE IF EXISTS assessments;
+DROP TABLE IF EXISTS interview_feedback;
+DROP TABLE IF EXISTS interviews;
+DROP TABLE IF EXISTS screening_answers;
+DROP TABLE IF EXISTS screening_questions;
+DROP TABLE IF EXISTS candidate_documents;
+DROP TABLE IF EXISTS candidate_stage_history;
+DROP TABLE IF EXISTS applications;
+DROP TABLE IF EXISTS candidates;
+DROP TABLE IF EXISTS job_postings;
+DROP TABLE IF EXISTS approval_instances;
+DROP TABLE IF EXISTS approval_steps;
+DROP TABLE IF EXISTS approval_workflows;
+DROP TABLE IF EXISTS job_requisitions;
+DELETE FROM permissions WHERE resource = 'recruitment';

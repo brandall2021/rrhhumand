@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS companies;
+DROP EXTENSION IF EXISTS "pgcrypto";

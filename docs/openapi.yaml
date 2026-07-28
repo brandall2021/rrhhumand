@@ -1,0 +1,5184 @@
+openapi: 3.0.3
+info:
+  title: RRHHumand API
+  description: |
+    Multi-tenant Employee Management Platform API.
+    Human Resources SaaS with modular monolith architecture.
+  version: 1.0.0
+  contact:
+    name: RRHHumand Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: Health
+    description: Health and readiness probes
+  - name: Auth
+    description: Authentication and token management
+  - name: Companies
+    description: Company management (tenants)
+  - name: Branches
+    description: Company branches
+  - name: Departments
+    description: Company departments
+  - name: Positions
+    description: Job positions
+  - name: Employees
+    description: Employee management
+  - name: Organization
+    description: Organization chart
+  - name: Profile
+    description: Current user profile
+  - name: Feed
+    description: Corporate social feed
+  - name: Surveys
+    description: Internal surveys module
+  - name: Documents
+    description: Document management with MinIO storage
+  - name: Document Categories
+    description: Document category management
+  - name: Document Tags
+    description: Document tag management
+  - name: Leave Types
+    description: Leave type management
+  - name: Leave Policies
+    description: Leave policy management
+  - name: Leave Balances
+    description: Employee leave balance management
+  - name: Leave Requests
+    description: Leave/vacation request management
+  - name: Leave Calendar
+    description: Absence calendar view
+  - name: Leave Reports
+    description: Leave reporting and analytics
+  - name: Holidays
+    description: Holiday management
+  - name: Attendance
+    description: Attendance and time tracking
+  - name: Attendance Policies
+    description: Attendance policy configuration
+  - name: Attendance Corrections
+    description: Attendance correction requests
+  - name: Performance Cycles
+    description: Evaluation cycle management
+  - name: Performance Templates
+    description: Evaluation template management
+  - name: Performance Scales
+    description: Rating scale configuration
+  - name: Performance Competencies
+    description: Competency management
+  - name: Performance Objectives
+    description: Employee objectives (SMART goals)
+  - name: Performance KPIs
+    description: Key Performance Indicators
+  - name: Performance Evaluators
+    description: Evaluator assignment (360°)
+  - name: Performance Evaluations
+    description: Evaluation management and submission
+  - name: Performance Feedback
+    description: Continuous feedback
+  - name: Performance Results
+    description: Score calculation and results
+  - name: Performance Scoring
+    description: Scoring rules and weight configuration
+  - name: Performance Improvement Plans
+    description: Improvement plans management
+  - name: Performance Development Plans
+    description: Individual development plans
+  - name: Performance
+    description: Performance dashboard and reports
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    Survey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [GENERAL, CLIMATE, SATISFACTION, FEEDBACK, PULSE, TRAINING, INTERNAL]
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, CLOSED, ARCHIVED]
+        anonymous:
+          type: boolean
+        multiple_responses:
+          type: boolean
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        created_by_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyTarget'
+        response_count:
+          type: integer
+        target_count:
+          type: integer
+        participation_rate:
+          type: number
+
+    SurveyQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        survey_id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        type:
+          type: string
+          enum: [TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, YES_NO, NUMBER]
+        position:
+          type: integer
+        required:
+          type: boolean
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyOption'
+
+    SurveyOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_id:
+          type: string
+          format: uuid
+        option_text:
+          type: string
+        position:
+          type: integer
+
+    SurveyTarget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        survey_id:
+          type: string
+          format: uuid
+        target_type:
+          type: string
+          enum: [ALL, DEPARTMENT, BRANCH, POSITION, EMPLOYEE]
+        target_id:
+          type: string
+          format: uuid
+
+    SurveyStats:
+      type: object
+      properties:
+        total_targeted:
+          type: integer
+        total_responded:
+          type: integer
+        participation_rate:
+          type: number
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionStats'
+
+    QuestionStats:
+      type: object
+      properties:
+        question_id:
+          type: string
+        question:
+          type: string
+        type:
+          type: string
+        total_answers:
+          type: integer
+        average:
+          type: number
+        min:
+          type: number
+        max:
+          type: number
+        distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionDistribution'
+        yes_count:
+          type: integer
+        no_count:
+          type: integer
+        yes_percentage:
+          type: number
+        sample_texts:
+          type: array
+          items:
+            type: string
+
+    OptionDistribution:
+      type: object
+      properties:
+        option_id:
+          type: string
+        option_text:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+
+    CreateSurveyRequest:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [GENERAL, CLIMATE, SATISFACTION, FEEDBACK, PULSE, TRAINING, INTERNAL]
+        anonymous:
+          type: boolean
+        multiple_responses:
+          type: boolean
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+
+    CreateQuestionRequest:
+      type: object
+      required: [question, type]
+      properties:
+        question:
+          type: string
+        type:
+          type: string
+          enum: [TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, YES_NO, NUMBER]
+        position:
+          type: integer
+        required:
+          type: boolean
+
+    CreateOptionRequest:
+      type: object
+      required: [option_text]
+      properties:
+        option_text:
+          type: string
+        position:
+          type: integer
+
+    SetTargetsRequest:
+      type: object
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          items:
+            type: object
+            required: [target_type]
+            properties:
+              target_type:
+                type: string
+                enum: [ALL, DEPARTMENT, BRANCH, POSITION, EMPLOYEE]
+              target_id:
+                type: string
+                format: uuid
+
+    RespondSurveyRequest:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required: [question_id]
+            properties:
+              question_id:
+                type: string
+                format: uuid
+              text:
+                type: string
+              number:
+                type: number
+              option_id:
+                type: string
+                format: uuid
+              option_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      responses:
+        '200':
+          description: Service is ready
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      parameters:
+        - name: company_id
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+        '401':
+          description: Invalid refresh token
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '204':
+          description: Logged out
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user info
+
+  /companies:
+    get:
+      tags: [Companies]
+      summary: List companies
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of companies
+    post:
+      tags: [Companies]
+      summary: Create company
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Company created
+
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Get company by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Company details
+    put:
+      tags: [Companies]
+      summary: Update company
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Company updated
+
+  /branches:
+    get:
+      tags: [Branches]
+      summary: List branches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/schemas/PaginationMeta'
+      responses:
+        '200':
+          description: List of branches
+    post:
+      tags: [Branches]
+      summary: Create branch
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Branch created
+
+  /branches/{id}:
+    get:
+      tags: [Branches]
+      summary: Get branch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Branch details
+
+  /departments:
+    get:
+      tags: [Departments]
+      summary: List departments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of departments
+    post:
+      tags: [Departments]
+      summary: Create department
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Department created
+
+  /positions:
+    get:
+      tags: [Positions]
+      summary: List positions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of positions
+    post:
+      tags: [Positions]
+      summary: Create position
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Position created
+
+  /employees:
+    get:
+      tags: [Employees]
+      summary: List employees
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: department_id
+          in: query
+          schema:
+            type: string
+        - name: branch_id
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of employees
+    post:
+      tags: [Employees]
+      summary: Create employee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Employee created
+
+  /employees/{id}:
+    get:
+      tags: [Employees]
+      summary: Get employee
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee details
+
+  /employees/{id}/contacts:
+    get:
+      tags: [Employees]
+      summary: Get employee contacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee contacts
+    put:
+      tags: [Employees]
+      summary: Upsert employee contacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        '200':
+          description: Contacts updated
+
+  /employees/{id}/addresses:
+    get:
+      tags: [Employees]
+      summary: Get employee addresses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee addresses
+
+  /employees/{id}/emergency-contacts:
+    get:
+      tags: [Employees]
+      summary: Get employee emergency contacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Emergency contacts
+
+  /employees/{id}/history:
+    get:
+      tags: [Employees]
+      summary: Get employee history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee history
+
+  /organization/tree:
+    get:
+      tags: [Organization]
+      summary: Get organization tree
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Organization tree
+
+  /me/profile:
+    get:
+      tags: [Profile]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+    put:
+      tags: [Profile]
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Profile updated
+
+  /feed:
+    get:
+      tags: [Feed]
+      summary: List feed posts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of posts
+    post:
+      tags: [Feed]
+      summary: Create post
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                visibility:
+                  type: string
+                pinned:
+                  type: boolean
+      responses:
+        '201':
+          description: Post created
+
+  /feed/{id}:
+    get:
+      tags: [Feed]
+      summary: Get post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post details
+    put:
+      tags: [Feed]
+      summary: Update post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Post updated
+    delete:
+      tags: [Feed]
+      summary: Delete post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Post deleted
+
+  /feed/{id}/comments:
+    post:
+      tags: [Feed]
+      summary: Add comment to post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Comment added
+
+  /feed/{id}/reactions:
+    post:
+      tags: [Feed]
+      summary: Add reaction to post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reaction_type]
+              properties:
+                reaction_type:
+                  type: string
+      responses:
+        '200':
+          description: Reaction added
+
+  /feed/{id}/reactions/{type}:
+    delete:
+      tags: [Feed]
+      summary: Remove reaction from post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Reaction removed
+
+  /surveys:
+    get:
+      tags: [Surveys]
+      summary: List surveys
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, PUBLISHED, CLOSED, ARCHIVED]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [GENERAL, CLIMATE, SATISFACTION, FEEDBACK, PULSE, TRAINING, INTERNAL]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of surveys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Survey'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      tags: [Surveys]
+      summary: Create survey
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSurveyRequest'
+      responses:
+        '201':
+          description: Survey created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Survey'
+
+  /surveys/{id}:
+    get:
+      tags: [Surveys]
+      summary: Get survey with questions and targets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Survey'
+        '404':
+          description: Survey not found
+    put:
+      tags: [Surveys]
+      summary: Update survey (DRAFT only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Survey updated
+        '400':
+          description: Survey not editable
+    delete:
+      tags: [Surveys]
+      summary: Delete survey (DRAFT only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Survey deleted
+        '400':
+          description: Only draft surveys can be deleted
+
+  /surveys/{id}/publish:
+    post:
+      tags: [Surveys]
+      summary: Publish survey (DRAFT -> PUBLISHED)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey published
+        '400':
+          description: Invalid transition or no questions
+
+  /surveys/{id}/close:
+    post:
+      tags: [Surveys]
+      summary: Close survey (PUBLISHED -> CLOSED)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey closed
+        '400':
+          description: Invalid transition
+
+  /surveys/{id}/archive:
+    post:
+      tags: [Surveys]
+      summary: Archive survey (CLOSED -> ARCHIVED)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey archived
+        '400':
+          description: Invalid transition
+
+  /surveys/{id}/questions:
+    get:
+      tags: [Surveys]
+      summary: List survey questions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of questions
+    post:
+      tags: [Surveys]
+      summary: Add question to survey
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        '201':
+          description: Question added
+
+  /surveys/questions/{id}:
+    put:
+      tags: [Surveys]
+      summary: Update question
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Question updated
+    delete:
+      tags: [Surveys]
+      summary: Delete question
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Question deleted
+
+  /surveys/questions/{id}/options:
+    post:
+      tags: [Surveys]
+      summary: Add option to question
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOptionRequest'
+      responses:
+        '201':
+          description: Option added
+
+  /surveys/options/{id}:
+    delete:
+      tags: [Surveys]
+      summary: Delete option
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Option deleted
+
+  /surveys/{id}/targets:
+    get:
+      tags: [Surveys]
+      summary: List survey targets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of targets
+    put:
+      tags: [Surveys]
+      summary: Set survey targets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetTargetsRequest'
+      responses:
+        '200':
+          description: Targets updated
+
+  /me/surveys:
+    get:
+      tags: [Surveys]
+      summary: Get available surveys for current employee
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of available surveys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Survey'
+
+  /surveys/{id}/respond:
+    post:
+      tags: [Surveys]
+      summary: Submit survey response
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespondSurveyRequest'
+      responses:
+        '200':
+          description: Response recorded
+        '400':
+          description: Survey closed or not active
+        '409':
+          description: Already answered
+
+  /surveys/{id}/results:
+    get:
+      tags: [Surveys]
+      summary: Get survey results and statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SurveyStats'
+
+  /surveys/{id}/export:
+    get:
+      tags: [Surveys]
+      summary: Export survey results
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv]
+            default: csv
+      responses:
+        '200':
+          description: CSV export
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /documents:
+    get:
+      tags: [Documents]
+      summary: List documents
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: category_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, archived, deleted] }
+      responses:
+        '200':
+          description: Paginated documents
+    post:
+      tags: [Documents]
+      summary: Upload document (multipart/form-data)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, name]
+              properties:
+                file: { type: string, format: binary }
+                name: { type: string }
+                description: { type: string }
+                category_id: { type: string, format: uuid }
+                employee_id: { type: string, format: uuid }
+                is_public: { type: boolean, default: false }
+                tags: { type: array, items: { type: string } }
+                expires_at: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Document created
+
+  /documents/{id}:
+    get:
+      tags: [Documents]
+      summary: Get document by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Document
+    put:
+      tags: [Documents]
+      summary: Update document metadata
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                category_id: { type: string, format: uuid }
+                is_public: { type: boolean }
+                tags: { type: array, items: { type: string } }
+                expires_at: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Documents]
+      summary: Soft-delete document
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Deleted
+
+  /documents/{id}/download:
+    get:
+      tags: [Documents]
+      summary: Download document file
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+
+  /documents/{id}/versions:
+    get:
+      tags: [Documents]
+      summary: List document versions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Version list
+    post:
+      tags: [Documents]
+      summary: Upload new version (multipart/form-data)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                change_note: { type: string }
+      responses:
+        '201':
+          description: Version created
+
+  /documents/{id}/archive:
+    post:
+      tags: [Documents]
+      summary: Archive document
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Archived
+
+  /documents/{id}/restore:
+    post:
+      tags: [Documents]
+      summary: Restore archived document
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Restored
+
+  /documents/{id}/permanent:
+    delete:
+      tags: [Documents]
+      summary: Permanently delete document (Super Admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Permanently deleted
+
+  /documents/{id}/permissions:
+    get:
+      tags: [Documents]
+      summary: List document permissions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Permissions list
+    put:
+      tags: [Documents]
+      summary: Set document permissions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_ids: { type: array, items: { type: string, format: uuid } }
+                permission_level: { type: string, enum: [view, edit, admin] }
+      responses:
+        '200':
+          description: Permissions updated
+
+  /documents/{id}/share:
+    post:
+      tags: [Documents]
+      summary: Share document with users
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_ids: { type: array, items: { type: string, format: uuid } }
+                permission_level: { type: string, enum: [view, edit] }
+                message: { type: string }
+      responses:
+        '201':
+          description: Shares created
+
+  /documents/{id}/share-link:
+    post:
+      tags: [Documents]
+      summary: Create shareable link
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_at: { type: string, format: date-time }
+                max_uses: { type: integer }
+      responses:
+        '201':
+          description: Share link created
+
+  /documents/{id}/tags:
+    post:
+      tags: [Documents]
+      summary: Set document tags
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Tags updated
+
+  /documents/stats:
+    get:
+      tags: [Documents]
+      summary: Get document statistics
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Document stats
+
+  /documents/expiring:
+    get:
+      tags: [Documents]
+      summary: List documents expiring soon
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: days
+          in: query
+          schema: { type: integer, default: 30 }
+      responses:
+        '200':
+          description: Expiring documents
+
+  /employees/{id}/documents:
+    get:
+      tags: [Documents]
+      summary: List employee documents
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Paginated documents
+
+  /document-categories:
+    get:
+      tags: [Document Categories]
+      summary: List document categories
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Categories list
+    post:
+      tags: [Document Categories]
+      summary: Create document category
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                parent_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Category created
+
+  /document-categories/{id}:
+    get:
+      tags: [Document Categories]
+      summary: Get category by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Category
+    put:
+      tags: [Document Categories]
+      summary: Update category
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Document Categories]
+      summary: Delete category
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Deleted
+
+  /document-tags:
+    get:
+      tags: [Document Tags]
+      summary: List document tags
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tags list
+    post:
+      tags: [Document Tags]
+      summary: Create document tag
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201':
+          description: Tag created
+
+  /share/{token}:
+    get:
+      tags: [Documents]
+      summary: Access shared document via link
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Document info
+
+  /leave/types:
+    get:
+      tags: [Leave Types]
+      summary: List leave types
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Leave types list
+    post:
+      tags: [Leave Types]
+      summary: Create leave type
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, code, category]
+              properties:
+                name: { type: string }
+                code: { type: string }
+                description: { type: string }
+                category: { type: string, enum: [VACATION, MEDICAL, PERSONAL, UNPAID, OTHER] }
+                requires_approval: { type: boolean, default: true }
+                requires_document: { type: boolean, default: false }
+                affects_balance: { type: boolean, default: true }
+                is_paid: { type: boolean, default: true }
+      responses:
+        '201':
+          description: Created
+
+  /leave/types/{id}:
+    get:
+      tags: [Leave Types]
+      summary: Get leave type
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Leave type
+    put:
+      tags: [Leave Types]
+      summary: Update leave type
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                category: { type: string }
+                requires_approval: { type: boolean }
+                requires_document: { type: boolean }
+                affects_balance: { type: boolean }
+                is_paid: { type: boolean }
+                is_active: { type: boolean }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Leave Types]
+      summary: Delete leave type
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Deleted
+
+  /leave/policies:
+    get:
+      tags: [Leave Policies]
+      summary: List leave policies
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Policies list
+    post:
+      tags: [Leave Policies]
+      summary: Create leave policy
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leave_type_id, name]
+              properties:
+                leave_type_id: { type: string, format: uuid }
+                name: { type: string }
+                days_per_year: { type: number }
+                minimum_days_before_request: { type: integer }
+                maximum_days_per_request: { type: number }
+                maximum_accumulated_days: { type: number }
+                allow_negative_balance: { type: boolean, default: false }
+                use_business_days: { type: boolean, default: true }
+                requires_manager_approval: { type: boolean, default: true }
+                requires_hr_approval: { type: boolean, default: false }
+      responses:
+        '201':
+          description: Created
+
+  /leave/holidays:
+    get:
+      tags: [Holidays]
+      summary: List holidays
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Holidays list
+    post:
+      tags: [Holidays]
+      summary: Create holiday
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, name]
+              properties:
+                date: { type: string, format: date }
+                name: { type: string }
+                is_recurring: { type: boolean, default: false }
+      responses:
+        '201':
+          description: Created
+
+  /leave/holidays/{id}:
+    delete:
+      tags: [Holidays]
+      summary: Delete holiday
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Deleted
+
+  /leave/balance:
+    get:
+      tags: [Leave Balances]
+      summary: Get leave balance
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Balances
+
+  /leave/balances/adjust:
+    post:
+      tags: [Leave Balances]
+      summary: Adjust leave balance (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, leave_type_id, year, adjustment_days, reason]
+              properties:
+                employee_id: { type: string, format: uuid }
+                leave_type_id: { type: string, format: uuid }
+                year: { type: integer }
+                adjustment_days: { type: number }
+                reason: { type: string }
+      responses:
+        '200':
+          description: Adjusted
+
+  /leave/requests:
+    get:
+      tags: [Leave Requests]
+      summary: List leave requests
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: leave_type_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED] }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Paginated requests
+    post:
+      tags: [Leave Requests]
+      summary: Create leave request
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leave_type_id, start_date, end_date]
+              properties:
+                leave_type_id: { type: string, format: uuid }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                reason: { type: string }
+                document_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Created
+
+  /leave/requests/{id}:
+    get:
+      tags: [Leave Requests]
+      summary: Get leave request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Request detail
+
+  /leave/requests/{id}/approve:
+    post:
+      tags: [Leave Requests]
+      summary: Approve leave request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comments: { type: string }
+      responses:
+        '200':
+          description: Approved
+
+  /leave/requests/{id}/reject:
+    post:
+      tags: [Leave Requests]
+      summary: Reject leave request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comments]
+              properties:
+                comments: { type: string }
+      responses:
+        '200':
+          description: Rejected
+
+  /leave/requests/{id}/cancel:
+    post:
+      tags: [Leave Requests]
+      summary: Cancel leave request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Cancelled
+
+  /leave/requests/{id}/history:
+    get:
+      tags: [Leave Requests]
+      summary: Get request history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: History list
+
+  /leave/calendar:
+    get:
+      tags: [Leave Calendar]
+      summary: Get absence calendar
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: branch_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Calendar days
+
+  /leave/calendar/team:
+    get:
+      tags: [Leave Calendar]
+      summary: Get team absence calendar
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Team absences
+
+  /leave/reports:
+    get:
+      tags: [Leave Reports]
+      summary: Get leave report
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: year
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Report data
+
+  /attendance/clock-in:
+    post:
+      tags: [Attendance]
+      summary: Clock in
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude: { type: number }
+                longitude: { type: number }
+                source: { type: string, enum: [WEB, MOBILE, KIOSK], default: WEB }
+                device_id: { type: string }
+                notes: { type: string }
+      responses:
+        '201':
+          description: Attendance record created
+
+  /attendance/clock-out:
+    post:
+      tags: [Attendance]
+      summary: Clock out
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source: { type: string }
+                device_id: { type: string }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Attendance record updated
+
+  /attendance/break/start:
+    post:
+      tags: [Attendance]
+      summary: Start break
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source: { type: string }
+                device_id: { type: string }
+      responses:
+        '200':
+          description: Break started
+
+  /attendance/break/end:
+    post:
+      tags: [Attendance]
+      summary: End break
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source: { type: string }
+                device_id: { type: string }
+      responses:
+        '200':
+          description: Break ended
+
+  /attendance/me:
+    get:
+      tags: [Attendance]
+      summary: Get my attendance records
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Attendance records
+
+  /attendance:
+    get:
+      tags: [Attendance]
+      summary: List all attendance records (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Paginated records
+
+  /attendance/{id}:
+    get:
+      tags: [Attendance]
+      summary: Get attendance record detail
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Record detail with punches
+
+  /attendance/dashboard:
+    get:
+      tags: [Attendance]
+      summary: Get attendance dashboard (today)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Dashboard data
+
+  /attendance/dashboard/team:
+    get:
+      tags: [Attendance]
+      summary: Get team attendance dashboard
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Team dashboard
+
+  /attendance/calendar:
+    get:
+      tags: [Attendance]
+      summary: Get attendance calendar
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Calendar records
+
+  /attendance/policies:
+    post:
+      tags: [Attendance Policies]
+      summary: Create attendance policy
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                tolerance_in_minutes: { type: integer, default: 0 }
+                tolerance_out_minutes: { type: integer, default: 0 }
+                allow_mobile: { type: boolean, default: true }
+                allow_web: { type: boolean, default: true }
+                allow_kiosk: { type: boolean, default: true }
+                require_gps: { type: boolean, default: false }
+                allow_remote: { type: boolean, default: true }
+                calculate_overtime: { type: boolean, default: true }
+                require_correction_approval: { type: boolean, default: true }
+                work_start_time: { type: string, default: "08:00:00" }
+                work_end_time: { type: string, default: "16:00:00" }
+                break_duration_minutes: { type: integer, default: 60 }
+                work_days: { type: array, items: { type: integer }, default: [1,2,3,4,5] }
+      responses:
+        '201':
+          description: Policy created
+
+  /attendance/locations:
+    post:
+      tags: [Attendance]
+      summary: Create attendance location (geofence)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, latitude, longitude]
+              properties:
+                name: { type: string }
+                latitude: { type: number }
+                longitude: { type: number }
+                radius_meters: { type: integer, default: 150 }
+                branch_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Location created
+
+  /attendance/devices:
+    post:
+      tags: [Attendance]
+      summary: Register attendance device
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, name]
+              properties:
+                device_id: { type: string }
+                name: { type: string }
+                location: { type: string }
+                branch_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Device registered
+
+  /attendance/corrections:
+    get:
+      tags: [Attendance Corrections]
+      summary: List correction requests
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+      responses:
+        '200':
+          description: Corrections list
+    post:
+      tags: [Attendance Corrections]
+      summary: Request attendance correction
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [correction_type, requested_value, reason]
+              properties:
+                attendance_id: { type: string, format: uuid }
+                correction_type: { type: string, enum: [CLOCK_IN, CLOCK_OUT] }
+                requested_value: { type: string, format: date-time }
+                reason: { type: string }
+      responses:
+        '201':
+          description: Correction requested
+
+  /attendance/corrections/{id}/approve:
+    post:
+      tags: [Attendance Corrections]
+      summary: Approve correction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Approved
+
+  /attendance/corrections/{id}/reject:
+    post:
+      tags: [Attendance Corrections]
+      summary: Reject correction
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IDParam'
+      responses:
+        '200':
+          description: Rejected
+
+  /attendance/export:
+    get:
+      tags: [Attendance]
+      summary: Export attendance CSV
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # ==================== SCHEDULING ====================
+
+  /api/v1/schedules:
+    post:
+      tags: [Scheduling]
+      summary: Create work schedule
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, schedule_type]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                schedule_type: { type: string, enum: [FIXED, ROTATING, FLEXIBLE, SPLIT] }
+                timezone: { type: string, default: "UTC" }
+                weekly_hours: { type: integer }
+                days:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      weekday: { type: integer, minimum: 0, maximum: 6 }
+                      is_working_day: { type: boolean }
+                      start_time: { type: string, example: "09:00:00" }
+                      end_time: { type: string, example: "17:00:00" }
+                      break_minutes: { type: integer }
+                      intervals:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            start_time: { type: string }
+                            end_time: { type: string }
+                            interval_type: { type: string, enum: [WORK, BREAK] }
+                            sequence: { type: integer }
+      responses:
+        '201': { description: Schedule created }
+    get:
+      tags: [Scheduling]
+      summary: List work schedules
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of schedules }
+
+  /api/v1/schedules/{id}:
+    get:
+      tags: [Scheduling]
+      summary: Get schedule by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Schedule details }
+    put:
+      tags: [Scheduling]
+      summary: Update schedule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                timezone: { type: string }
+                weekly_hours: { type: integer }
+                status: { type: string }
+      responses:
+        '200': { description: Schedule updated }
+    delete:
+      tags: [Scheduling]
+      summary: Delete schedule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Schedule deleted }
+
+  /api/v1/shifts:
+    post:
+      tags: [Scheduling]
+      summary: Create shift
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, start_time, end_time]
+              properties:
+                name: { type: string }
+                code: { type: string }
+                start_time: { type: string, example: "06:00:00" }
+                end_time: { type: string, example: "14:00:00" }
+                crosses_midnight: { type: boolean }
+                break_minutes: { type: integer }
+                color: { type: string, example: "#FF5733" }
+      responses:
+        '201': { description: Shift created }
+    get:
+      tags: [Scheduling]
+      summary: List shifts
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of shifts }
+
+  /api/v1/shifts/{id}:
+    get:
+      tags: [Scheduling]
+      summary: Get shift by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Shift details }
+    put:
+      tags: [Scheduling]
+      summary: Update shift
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                code: { type: string }
+                start_time: { type: string }
+                end_time: { type: string }
+                crosses_midnight: { type: boolean }
+                break_minutes: { type: integer }
+                color: { type: string }
+                status: { type: string }
+      responses:
+        '200': { description: Shift updated }
+    delete:
+      tags: [Scheduling]
+      summary: Delete shift
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Shift deleted }
+
+  /api/v1/employees/{id}/schedule:
+    post:
+      tags: [Scheduling]
+      summary: Assign schedule to employee
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [schedule_id, effective_from]
+              properties:
+                schedule_id: { type: string, format: uuid }
+                effective_from: { type: string, format: date }
+                effective_to: { type: string, format: date }
+                priority: { type: integer }
+      responses:
+        '201': { description: Assignment created }
+    get:
+      tags: [Scheduling]
+      summary: Get employee active schedule
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: Active schedule }
+
+  /api/v1/employees/{id}/shift:
+    post:
+      tags: [Scheduling]
+      summary: Assign shift to employee for a date
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, work_date]
+              properties:
+                shift_id: { type: string, format: uuid }
+                work_date: { type: string, format: date }
+                notes: { type: string }
+      responses:
+        '201': { description: Shift assignment created }
+    get:
+      tags: [Scheduling]
+      summary: Get employee shift for date
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: Shift assignment }
+
+  /api/v1/employees/{id}/rotation:
+    post:
+      tags: [Scheduling]
+      summary: Assign rotation to employee
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template_id, start_date]
+              properties:
+                template_id: { type: string, format: uuid }
+                start_date: { type: string, format: date }
+                cycle_position: { type: integer }
+                effective_to: { type: string, format: date }
+      responses:
+        '201': { description: Rotation assignment created }
+
+  /api/v1/employees/{id}/schedule/resolved:
+    get:
+      tags: [Scheduling]
+      summary: Get resolved schedule for employee on date
+      description: Resolves the effective schedule applying priority chain (exception > shift > calendar > schedule > rotation)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Resolved schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  employee_id: { type: string, format: uuid }
+                  date: { type: string, format: date }
+                  shift_id: { type: string, format: uuid }
+                  shift_name: { type: string }
+                  planned_start: { type: string, format: date-time }
+                  planned_end: { type: string, format: date-time }
+                  break_minutes: { type: integer }
+                  status: { type: string, enum: [WORKING, DAY_OFF, HOLIDAY] }
+                  timezone: { type: string }
+                  is_working_day: { type: boolean }
+
+  /api/v1/scheduling/calendar/generate:
+    post:
+      tags: [Scheduling]
+      summary: Generate work calendar for employee
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, from, to]
+              properties:
+                employee_id: { type: string, format: uuid }
+                from: { type: string, format: date }
+                to: { type: string, format: date }
+      responses:
+        '200': { description: Generated calendar entries }
+
+  /api/v1/scheduling/calendar:
+    get:
+      tags: [Scheduling]
+      summary: List work calendar entries
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 30 }
+      responses:
+        '200': { description: Calendar entries with pagination }
+
+  /api/v1/scheduling/exceptions:
+    post:
+      tags: [Scheduling]
+      summary: Create schedule exception
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exception_date, exception_type]
+              properties:
+                employee_id: { type: string, format: uuid }
+                exception_date: { type: string, format: date }
+                exception_type: { type: string, enum: [DAY_OFF, SPECIAL_SCHEDULE, HOLIDAY_WORK] }
+                start_time: { type: string }
+                end_time: { type: string }
+                shift_id: { type: string, format: uuid }
+                reason: { type: string }
+      responses:
+        '201': { description: Exception created }
+    get:
+      tags: [Scheduling]
+      summary: List schedule exceptions
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of exceptions }
+
+  /api/v1/scheduling/swap:
+    post:
+      tags: [Scheduling]
+      summary: Request shift swap
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_employee_id, requester_date, target_date]
+              properties:
+                target_employee_id: { type: string, format: uuid }
+                requester_date: { type: string, format: date }
+                target_date: { type: string, format: date }
+                reason: { type: string }
+      responses:
+        '201': { description: Swap request created }
+
+  /api/v1/scheduling/swap/{id}/approve:
+    post:
+      tags: [Scheduling]
+      summary: Approve shift swap
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Swap approved }
+
+  /api/v1/scheduling/swap/{id}/reject:
+    post:
+      tags: [Scheduling]
+      summary: Reject shift swap
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Swap rejected }
+
+  /api/v1/rotation-templates:
+    post:
+      tags: [Scheduling]
+      summary: Create rotation template
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, days]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                days:
+                  type: array
+                  items:
+                    type: object
+                    required: [day_position]
+                    properties:
+                      day_position: { type: integer }
+                      shift_id: { type: string, format: uuid }
+                      is_rest_day: { type: boolean }
+      responses:
+        '201': { description: Template created }
+    get:
+      tags: [Scheduling]
+      summary: List rotation templates
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of templates }
+
+  /api/v1/rotation-templates/{id}:
+    get:
+      tags: [Scheduling]
+      summary: Get rotation template by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Template details }
+
+  # ==================== OVERTIME ====================
+
+  /api/v1/overtime:
+    get:
+      tags: [Overtime]
+      summary: List overtime records
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string, enum: [DETECTED, PENDING, REQUESTED, SUBMITTED, APPROVED, REJECTED, COMPENSATED, PAID] }
+        - name: overtime_type
+          in: query
+          schema: { type: string, enum: [REGULAR, WEEKEND, HOLIDAY, NIGHT, EMERGENCY, ON_CALL, SPECIAL] }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: List of overtime records }
+
+  /api/v1/overtime/{id}:
+    get:
+      tags: [Overtime]
+      summary: Get overtime record by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Overtime record details }
+
+  /api/v1/overtime/{id}/approve:
+    post:
+      tags: [Overtime]
+      summary: Approve overtime record
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approved_minutes: { type: integer }
+                comments: { type: string }
+      responses:
+        '200': { description: Overtime approved }
+
+  /api/v1/overtime/{id}/reject:
+    post:
+      tags: [Overtime]
+      summary: Reject overtime record
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Overtime rejected }
+
+  /api/v1/overtime/detect:
+    post:
+      tags: [Overtime]
+      summary: Detect overtime from attendance records
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date_from, date_to]
+              properties:
+                date_from: { type: string, format: date }
+                date_to: { type: string, format: date }
+      responses:
+        '200':
+          description: Detection results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records: { type: array, items: { type: object } }
+                  count: { type: integer }
+
+  /api/v1/overtime/dashboard:
+    get:
+      tags: [Overtime]
+      summary: Get overtime dashboard
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_detected: { type: integer }
+                  total_pending: { type: integer }
+                  total_approved: { type: integer }
+                  total_rejected: { type: integer }
+                  total_compensated: { type: integer }
+                  total_paid: { type: integer }
+                  total_minutes: { type: integer }
+
+  /api/v1/overtime/requests:
+    post:
+      tags: [Overtime]
+      summary: Request overtime hours
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [work_date, requested_minutes, reason]
+              properties:
+                work_date: { type: string, format: date }
+                requested_minutes: { type: integer }
+                reason: { type: string }
+                overtime_record_id: { type: string, format: uuid }
+      responses:
+        '201': { description: Request created }
+    get:
+      tags: [Overtime]
+      summary: List overtime requests
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: List of requests }
+
+  /api/v1/overtime/requests/{id}:
+    get:
+      tags: [Overtime]
+      summary: Get overtime request by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Request details }
+
+  /api/v1/overtime/requests/{id}/approve:
+    post:
+      tags: [Overtime]
+      summary: Approve overtime request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approved_minutes: { type: integer }
+                comments: { type: string }
+      responses:
+        '200': { description: Request approved }
+
+  /api/v1/overtime/requests/{id}/reject:
+    post:
+      tags: [Overtime]
+      summary: Reject overtime request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Request rejected }
+
+  /api/v1/overtime-policies:
+    post:
+      tags: [Overtime]
+      summary: Create overtime policy
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                max_daily_minutes: { type: integer, default: 120 }
+                max_weekly_minutes: { type: integer, default: 480 }
+                max_monthly_minutes: { type: integer, default: 1920 }
+                requires_approval: { type: boolean, default: true }
+                allows_compensation: { type: boolean, default: true }
+                allows_payment: { type: boolean, default: true }
+                minimum_overtime_minutes: { type: integer, default: 0 }
+                rounding_minutes: { type: integer, default: 1 }
+                overtime_expiration_days: { type: integer, default: 0 }
+                night_start: { type: string, default: "22:00:00" }
+                night_end: { type: string, default: "06:00:00" }
+                weekend_multiplier: { type: number, default: 1.5 }
+                holiday_multiplier: { type: number, default: 2.0 }
+                night_multiplier: { type: number, default: 1.5 }
+      responses:
+        '201': { description: Policy created }
+    get:
+      tags: [Overtime]
+      summary: List overtime policies
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of policies }
+
+  /api/v1/overtime-policies/{id}:
+    get:
+      tags: [Overtime]
+      summary: Get overtime policy by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Policy details }
+    put:
+      tags: [Overtime]
+      summary: Update overtime policy
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                max_daily_minutes: { type: integer }
+                max_weekly_minutes: { type: integer }
+                max_monthly_minutes: { type: integer }
+                requires_approval: { type: boolean }
+                allows_compensation: { type: boolean }
+                allows_payment: { type: boolean }
+                minimum_overtime_minutes: { type: integer }
+                rounding_minutes: { type: integer }
+                overtime_expiration_days: { type: integer }
+                night_start: { type: string }
+                night_end: { type: string }
+                weekend_multiplier: { type: number }
+                holiday_multiplier: { type: number }
+                night_multiplier: { type: number }
+                status: { type: string }
+      responses:
+        '200': { description: Policy updated }
+    delete:
+      tags: [Overtime]
+      summary: Delete overtime policy
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Policy deleted }
+
+  /api/v1/compensations:
+    post:
+      tags: [Overtime]
+      summary: Request time compensation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [work_date, minutes, reason]
+              properties:
+                work_date: { type: string, format: date }
+                minutes: { type: integer }
+                reason: { type: string }
+      responses:
+        '201': { description: Compensation request created }
+    get:
+      tags: [Overtime]
+      summary: List compensation requests
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of compensations }
+
+  /api/v1/compensations/{id}/approve:
+    post:
+      tags: [Overtime]
+      summary: Approve compensation request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Compensation approved }
+
+  /api/v1/compensations/{id}/reject:
+    post:
+      tags: [Overtime]
+      summary: Reject compensation request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Compensation rejected }
+
+  /api/v1/compensations/{id}/cancel:
+    post:
+      tags: [Overtime]
+      summary: Cancel compensation request
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Compensation cancelled }
+
+  /api/v1/employees/{id}/overtime:
+    get:
+      tags: [Overtime]
+      summary: Get employee overtime records
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 30 }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: Employee overtime records with pagination }
+
+  /api/v1/employees/{id}/time-balance:
+    get:
+      tags: [Overtime]
+      summary: Get employee time balance
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Time balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance_minutes: { type: integer }
+                  updated_at: { type: string, format: date-time }
+
+  /api/v1/employees/{id}/time-balance/adjust:
+    post:
+      tags: [Overtime]
+      summary: Adjust employee time balance
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [minutes, reason]
+              properties:
+                minutes: { type: integer }
+                reason: { type: string }
+      responses:
+        '200': { description: Balance adjusted }
+
+  /api/v1/employees/{id}/time-balance/transactions:
+    get:
+      tags: [Overtime]
+      summary: Get employee time balance transactions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: List of balance transactions }
+
+  /api/v1/performance/cycles:
+    get:
+      tags: [Performance Cycles]
+      summary: List evaluation cycles
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of cycles }
+    post:
+      tags: [Performance Cycles]
+      summary: Create evaluation cycle
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, start_date, end_date]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                evaluation_deadline: { type: string, format: date }
+      responses:
+        '201': { description: Cycle created }
+
+  /api/v1/performance/cycles/{id}:
+    get:
+      tags: [Performance Cycles]
+      summary: Get cycle by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Cycle details }
+    put:
+      tags: [Performance Cycles]
+      summary: Update cycle (DRAFT only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                evaluation_deadline: { type: string, format: date }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/cycles/{id}/open:
+    post:
+      tags: [Performance Cycles]
+      summary: Open cycle (DRAFT -> OPEN)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Cycle opened }
+
+  /api/v1/performance/cycles/{id}/close:
+    post:
+      tags: [Performance Cycles]
+      summary: Close cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Cycle closed }
+
+  /api/v1/performance/templates:
+    get:
+      tags: [Performance Templates]
+      summary: List evaluation templates
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of templates }
+    post:
+      tags: [Performance Templates]
+      summary: Create evaluation template with sections
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                is_default: { type: boolean }
+                sections:
+                  type: array
+                  items:
+                    type: object
+                    required: [name, section_type]
+                    properties:
+                      name: { type: string }
+                      description: { type: string }
+                      section_type: { type: string, enum: [OBJECTIVES, COMPETENCIES, KPI, SELF_EVALUATION, FEEDBACK, DEVELOPMENT] }
+                      weight: { type: number }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          required: [name]
+                          properties:
+                            name: { type: string }
+                            description: { type: string }
+                            item_type: { type: string }
+                            weight: { type: number }
+      responses:
+        '201': { description: Template created }
+
+  /api/v1/performance/scales:
+    get:
+      tags: [Performance Scales]
+      summary: List rating scales
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of scales }
+    post:
+      tags: [Performance Scales]
+      summary: Create rating scale with levels
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, min_value, max_value]
+              properties:
+                name: { type: string }
+                min_value: { type: number }
+                max_value: { type: number }
+                description: { type: string }
+                levels:
+                  type: array
+                  items:
+                    type: object
+                    required: [value, label]
+                    properties:
+                      value: { type: number }
+                      label: { type: string }
+                      description: { type: string }
+      responses:
+        '201': { description: Scale created }
+
+  /api/v1/performance/competencies:
+    get:
+      tags: [Performance Competencies]
+      summary: List competencies
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: List of competencies }
+    post:
+      tags: [Performance Competencies]
+      summary: Create competency
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                category: { type: string }
+      responses:
+        '201': { description: Competency created }
+
+  /api/v1/performance/competencies/{id}:
+    put:
+      tags: [Performance Competencies]
+      summary: Update competency
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                category: { type: string }
+                active: { type: boolean }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/objectives:
+    get:
+      tags: [Performance Objectives]
+      summary: List objectives
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cycle_id
+          in: query
+          schema: { type: string }
+        - name: employee_id
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of objectives }
+    post:
+      tags: [Performance Objectives]
+      summary: Create objective
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, cycle_id, title]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                title: { type: string }
+                description: { type: string }
+                metric: { type: string }
+                target_value: { type: number }
+                unit: { type: string }
+                weight: { type: number }
+                start_date: { type: string, format: date }
+                due_date: { type: string, format: date }
+      responses:
+        '201': { description: Objective created }
+
+  /api/v1/performance/objectives/{id}:
+    get:
+      tags: [Performance Objectives]
+      summary: Get objective
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Objective details }
+    put:
+      tags: [Performance Objectives]
+      summary: Update objective
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                metric: { type: string }
+                target_value: { type: number }
+                current_value: { type: number }
+                unit: { type: string }
+                weight: { type: number }
+                status: { type: string }
+      responses:
+        '200': { description: Updated }
+    delete:
+      tags: [Performance Objectives]
+      summary: Cancel objective
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Cancelled }
+
+  /api/v1/performance/objectives/{id}/progress:
+    post:
+      tags: [Performance Objectives]
+      summary: Update objective progress
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_value]
+              properties:
+                current_value: { type: number }
+      responses:
+        '200': { description: Progress updated }
+
+  /api/v1/performance/kpis:
+    get:
+      tags: [Performance KPIs]
+      summary: List KPIs
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cycle_id
+          in: query
+          schema: { type: string }
+        - name: employee_id
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of KPIs }
+    post:
+      tags: [Performance KPIs]
+      summary: Create KPI
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, cycle_id, name]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                name: { type: string }
+                description: { type: string }
+                target_value: { type: number }
+                unit: { type: string }
+                weight: { type: number }
+      responses:
+        '201': { description: KPI created }
+
+  /api/v1/performance/kpis/{id}:
+    put:
+      tags: [Performance KPIs]
+      summary: Update KPI
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                target_value: { type: number }
+                current_value: { type: number }
+                unit: { type: string }
+                weight: { type: number }
+                status: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/evaluators:
+    get:
+      tags: [Performance Evaluators]
+      summary: List evaluators for a cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cycle_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: List of evaluators }
+    post:
+      tags: [Performance Evaluators]
+      summary: Assign evaluators to employee
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, cycle_id, evaluators]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                evaluators:
+                  type: array
+                  items:
+                    type: object
+                    required: [evaluator_id, evaluator_type]
+                    properties:
+                      evaluator_id: { type: string }
+                      evaluator_type: { type: string, enum: [SELF, MANAGER, PEER, SUBORDINATE, HR, EXTERNAL] }
+      responses:
+        '201': { description: Evaluators assigned }
+
+  /api/v1/performance/evaluations:
+    get:
+      tags: [Performance Evaluations]
+      summary: List evaluations
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cycle_id
+          in: query
+          schema: { type: string }
+        - name: employee_id
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of evaluations }
+    post:
+      tags: [Performance Evaluations]
+      summary: Create evaluation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cycle_id, employee_id, evaluator_id, evaluator_type]
+              properties:
+                cycle_id: { type: string }
+                employee_id: { type: string }
+                evaluator_id: { type: string }
+                evaluator_type: { type: string, enum: [SELF, MANAGER, PEER, SUBORDINATE, HR, EXTERNAL] }
+                template_id: { type: string }
+                comments: { type: string }
+                answers:
+                  type: array
+                  items:
+                    type: object
+                    required: [item_name]
+                    properties:
+                      section_name: { type: string }
+                      item_name: { type: string }
+                      item_type: { type: string }
+                      score: { type: number }
+                      value: { type: string }
+                      comments: { type: string }
+                      weight: { type: number }
+      responses:
+        '201': { description: Evaluation created }
+
+  /api/v1/performance/evaluations/{id}:
+    get:
+      tags: [Performance Evaluations]
+      summary: Get evaluation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Evaluation details }
+    put:
+      tags: [Performance Evaluations]
+      summary: Update evaluation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comments: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/evaluations/{id}/submit:
+    post:
+      tags: [Performance Evaluations]
+      summary: Submit evaluation for review
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Evaluation submitted }
+
+  /api/v1/performance/evaluations/{id}/reopen:
+    post:
+      tags: [Performance Evaluations]
+      summary: Reopen evaluation (SUBMITTED -> DRAFT)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Evaluation reopened }
+
+  /api/v1/performance/evaluations/{id}/approve:
+    post:
+      tags: [Performance Evaluations]
+      summary: Approve evaluation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Evaluation approved }
+
+  /api/v1/performance/evaluations/{id}/answers:
+    get:
+      tags: [Performance Evaluations]
+      summary: List evaluation answers
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: List of answers }
+    post:
+      tags: [Performance Evaluations]
+      summary: Add answer to evaluation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [item_name]
+              properties:
+                section_name: { type: string }
+                item_name: { type: string }
+                item_type: { type: string }
+                score: { type: number }
+                value: { type: string }
+                comments: { type: string }
+                weight: { type: number }
+      responses:
+        '201': { description: Answer created }
+
+  /api/v1/performance/evaluations/{id}/evidence:
+    get:
+      tags: [Performance Evaluations]
+      summary: List evaluation evidence
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: List of evidence }
+    post:
+      tags: [Performance Evaluations]
+      summary: Attach evidence to evaluation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                evidence_type: { type: string, enum: [COMMENT, DOCUMENT, LINK, KPI_RESULT, PROJECT] }
+                url: { type: string }
+      responses:
+        '201': { description: Evidence attached }
+
+  /api/v1/performance/feedback:
+    get:
+      tags: [Performance Feedback]
+      summary: List feedback for employee
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of feedback }
+    post:
+      tags: [Performance Feedback]
+      summary: Create feedback
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, feedback_type, message]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                feedback_type: { type: string, enum: [RECOGNITION, CONSTRUCTIVE, COACHING, GENERAL, GOAL_FEEDBACK] }
+                message: { type: string }
+                is_private: { type: boolean }
+                visible_to_employee: { type: boolean, default: true }
+      responses:
+        '201': { description: Feedback created }
+
+  /api/v1/performance/feedback/{id}:
+    get:
+      tags: [Performance Feedback]
+      summary: Get feedback by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Feedback details }
+
+  /api/v1/performance/results/calculate:
+    post:
+      tags: [Performance Results]
+      summary: Calculate employee performance result
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cycle_id, employee_id]
+              properties:
+                cycle_id: { type: string }
+                employee_id: { type: string }
+      responses:
+        '200': { description: Result calculated }
+
+  /api/v1/performance/results:
+    get:
+      tags: [Performance Results]
+      summary: List results for a cycle
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cycle_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: List of results }
+
+  /api/v1/performance/results/{id}:
+    get:
+      tags: [Performance Results]
+      summary: Get employee result
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Result details }
+
+  /api/v1/performance/scoring-rules:
+    get:
+      tags: [Performance Scoring]
+      summary: Get scoring rules
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Scoring rules }
+    put:
+      tags: [Performance Scoring]
+      summary: Update scoring rules
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objective_weight: { type: number }
+                competency_weight: { type: number }
+                kpi_weight: { type: number }
+                self_eval_weight: { type: number }
+                manager_weight: { type: number }
+                peer_weight: { type: number }
+                hr_weight: { type: number }
+      responses:
+        '200': { description: Rules updated }
+
+  /api/v1/performance/improvement-plans:
+    get:
+      tags: [Performance Improvement Plans]
+      summary: List improvement plans
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of plans }
+    post:
+      tags: [Performance Improvement Plans]
+      summary: Create improvement plan
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, title]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                result_id: { type: string }
+                title: { type: string }
+                problem_description: { type: string }
+                objective: { type: string }
+                responsible_id: { type: string }
+                due_date: { type: string, format: date }
+                actions:
+                  type: array
+                  items:
+                    type: object
+                    required: [title]
+                    properties:
+                      title: { type: string }
+                      description: { type: string }
+                      due_date: { type: string, format: date }
+      responses:
+        '201': { description: Plan created }
+
+  /api/v1/performance/improvement-plans/{id}:
+    get:
+      tags: [Performance Improvement Plans]
+      summary: Get improvement plan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Plan details }
+    put:
+      tags: [Performance Improvement Plans]
+      summary: Update improvement plan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                problem_description: { type: string }
+                objective: { type: string }
+                responsible_id: { type: string }
+                due_date: { type: string, format: date }
+                status: { type: string, enum: [OPEN, IN_PROGRESS, SUCCESS, FAILED, CANCELLED] }
+                outcome: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/improvement-plans/{id}/complete:
+    post:
+      tags: [Performance Improvement Plans]
+      summary: Mark improvement plan as completed
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Plan completed }
+
+  /api/v1/performance/development-plans:
+    get:
+      tags: [Performance Development Plans]
+      summary: List development plans
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: employee_id
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: List of development plans }
+    post:
+      tags: [Performance Development Plans]
+      summary: Create development plan
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, title]
+              properties:
+                employee_id: { type: string }
+                cycle_id: { type: string }
+                title: { type: string }
+                description: { type: string }
+                career_goal: { type: string }
+                timeline_months: { type: integer, default: 12 }
+                actions:
+                  type: array
+                  items:
+                    type: object
+                    required: [title]
+                    properties:
+                      title: { type: string }
+                      description: { type: string }
+                      action_type: { type: string, enum: [TRAINING, MENTORING, PROJECT, CERTIFICATION, ROTATION] }
+                      due_date: { type: string, format: date }
+      responses:
+        '201': { description: Development plan created }
+
+  /api/v1/performance/development-plans/{id}:
+    get:
+      tags: [Performance Development Plans]
+      summary: Get development plan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Plan details }
+    put:
+      tags: [Performance Development Plans]
+      summary: Update development plan
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                career_goal: { type: string }
+                timeline_months: { type: integer }
+                status: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/performance/dashboard:
+    get:
+      tags: [Performance]
+      summary: Get performance dashboard
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Performance dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      total_cycles:
+                        type: integer
+                      active_cycles:
+                        type: integer
+                      total_evaluations:
+                        type: integer
+                      completed_evaluations:
+                        type: integer
+                      pending_evaluations:
+                        type: integer
+                      average_score:
+                        type: number
+                      total_objectives:
+                        type: integer
+                      completed_objectives:
+                        type: integer
+                      total_kpis:
+                        type: integer
+                      total_feedback:
+                        type: integer
+                      total_improvement_plans:
+                        type: integer
+                      rating_distribution:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            rating:
+                              type: string
+                            count:
+                              type: integer
+
+  # ─── RECRUITMENT (FASE 15) ────────────────────────────────────────
+
+  /api/v1/recruitment/requisitions:
+    get:
+      tags: [Recruitment]
+      summary: List job requisitions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of requisitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create job requisition
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                position_id: { type: string, format: uuid }
+                department_id: { type: string, format: uuid }
+                hiring_manager_id: { type: string, format: uuid }
+                title: { type: string }
+                description: { type: string }
+                vacancies: { type: integer, default: 1 }
+                employment_type: { type: string }
+                work_mode: { type: string }
+                location: { type: string }
+                salary_min: { type: number }
+                salary_max: { type: number }
+                currency: { type: string }
+                reason: { type: string }
+      responses:
+        '201': { description: Requisition created }
+
+  /api/v1/recruitment/requisitions/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get requisition by ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Requisition }
+        '404': { description: Not found }
+    put:
+      tags: [Recruitment]
+      summary: Update requisition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                vacancies: { type: integer }
+                employment_type: { type: string }
+                work_mode: { type: string }
+                location: { type: string }
+                salary_min: { type: number }
+                salary_max: { type: number }
+                currency: { type: string }
+                reason: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/recruitment/requisitions/{id}/submit:
+    post:
+      tags: [Recruitment]
+      summary: Submit requisition for approval
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Submitted }
+
+  /api/v1/recruitment/requisitions/{id}/approve:
+    post:
+      tags: [Recruitment]
+      summary: Approve requisition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Approved }
+
+  /api/v1/recruitment/requisitions/{id}/open:
+    post:
+      tags: [Recruitment]
+      summary: Open requisition for hiring
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Opened }
+
+  /api/v1/recruitment/requisitions/{id}/close:
+    post:
+      tags: [Recruitment]
+      summary: Close requisition
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Closed }
+
+  /api/v1/recruitment/jobs:
+    get:
+      tags: [Recruitment]
+      summary: List job postings
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of postings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create job posting
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requisition_id, title, description]
+              properties:
+                requisition_id: { type: string, format: uuid }
+                title: { type: string }
+                description: { type: string }
+                requirements: { type: string }
+                responsibilities: { type: string }
+                benefits: { type: string }
+                employment_type: { type: string }
+                work_mode: { type: string }
+                location: { type: string }
+      responses:
+        '201': { description: Posting created }
+
+  /api/v1/recruitment/jobs/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get job posting
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Posting }
+        '404': { description: Not found }
+
+  /api/v1/recruitment/jobs/{id}/publish:
+    post:
+      tags: [Recruitment]
+      summary: Publish job posting
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Published }
+
+  /api/v1/recruitment/jobs/{id}/close:
+    post:
+      tags: [Recruitment]
+      summary: Close job posting
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Closed }
+
+  /api/v1/recruitment/candidates:
+    get:
+      tags: [Recruitment]
+      summary: List candidates
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: source
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create candidate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email]
+              properties:
+                first_name: { type: string }
+                last_name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                document_number: { type: string }
+                location: { type: string }
+                linkedin_url: { type: string, format: uri }
+                portfolio_url: { type: string, format: uri }
+                source: { type: string, enum: [WEBSITE, LINKEDIN, REFERRAL, JOB_BOARD, SOCIAL, DIRECT, AGENCY] }
+      responses:
+        '201': { description: Candidate created }
+
+  /api/v1/recruitment/candidates/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get candidate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Candidate }
+        '404': { description: Not found }
+    put:
+      tags: [Recruitment]
+      summary: Update candidate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                last_name: { type: string }
+                phone: { type: string }
+                location: { type: string }
+                linkedin_url: { type: string }
+                portfolio_url: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/recruitment/applications:
+    get:
+      tags: [Recruitment]
+      summary: List applications
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: candidate_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: posting_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create application
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [candidate_id, job_posting_id]
+              properties:
+                candidate_id: { type: string, format: uuid }
+                job_posting_id: { type: string, format: uuid }
+      responses:
+        '201': { description: Application created }
+
+  /api/v1/recruitment/applications/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Application }
+        '404': { description: Not found }
+
+  /api/v1/recruitment/applications/{id}/stage:
+    post:
+      tags: [Recruitment]
+      summary: Move application to new stage
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_stage]
+              properties:
+                to_stage: { type: string, enum: [SCREENING, PHONE_INTERVIEW, TECHNICAL_INTERVIEW, HR_INTERVIEW, ASSESSMENT, FINALIST, OFFER, HIRED, REJECTED, WITHDRAWN, ON_HOLD] }
+                notes: { type: string }
+      responses:
+        '200': { description: Stage changed }
+
+  /api/v1/recruitment/applications/{id}/reject:
+    post:
+      tags: [Recruitment]
+      summary: Reject application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Rejected }
+
+  /api/v1/recruitment/applications/{id}/withdraw:
+    post:
+      tags: [Recruitment]
+      summary: Withdraw application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Withdrawn }
+
+  /api/v1/recruitment/applications/{id}/history:
+    get:
+      tags: [Recruitment]
+      summary: Get stage history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Stage history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/v1/recruitment/applications/{id}/hire:
+    post:
+      tags: [Recruitment]
+      summary: Convert candidate to employee (FASE 3 integration)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Candidate converted }
+
+  /api/v1/recruitment/interviews:
+    get:
+      tags: [Recruitment]
+      summary: List interviews
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: application_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: interviewer_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of interviews
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create interview
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [application_id, interviewer_id, interview_type]
+              properties:
+                application_id: { type: string, format: uuid }
+                interviewer_id: { type: string, format: uuid }
+                interview_type: { type: string, enum: [PHONE, VIDEO, ONSITE, TECHNICAL, HR, MANAGER] }
+                scheduled_at: { type: string, format: date-time }
+                duration_minutes: { type: integer }
+                meeting_url: { type: string, format: uri }
+                location: { type: string }
+      responses:
+        '201': { description: Interview created }
+
+  /api/v1/recruitment/interviews/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get interview
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Interview }
+        '404': { description: Not found }
+    put:
+      tags: [Recruitment]
+      summary: Update interview
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scheduled_at: { type: string, format: date-time }
+                duration_minutes: { type: integer }
+                meeting_url: { type: string }
+                location: { type: string }
+                status: { type: string }
+      responses:
+        '200': { description: Updated }
+
+  /api/v1/recruitment/interviews/{id}/feedback:
+    post:
+      tags: [Recruitment]
+      summary: Submit interview feedback
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recommendation]
+              properties:
+                score: { type: number }
+                comments: { type: string }
+                recommendation: { type: string, enum: [STRONG_YES, YES, MAYBE, NO, STRONG_NO] }
+      responses:
+        '201': { description: Feedback created }
+    get:
+      tags: [Recruitment]
+      summary: List interview feedback
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: List of feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/v1/recruitment/assessments:
+    post:
+      tags: [Recruitment]
+      summary: Create assessment
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [application_id, title]
+              properties:
+                application_id: { type: string, format: uuid }
+                assessment_type: { type: string, enum: [TECHNICAL, LANGUAGE, COGNITIVE, PERSONALITY, CUSTOM] }
+                title: { type: string }
+                description: { type: string }
+                max_score: { type: number }
+                duration_minutes: { type: integer }
+      responses:
+        '201': { description: Assessment created }
+
+  /api/v1/recruitment/assessments/{id}:
+    get:
+      tags: [Recruitment]
+      summary: List assessments for application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          description: application_id
+      responses:
+        '200':
+          description: List of assessments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/v1/recruitment/screening:
+    post:
+      tags: [Recruitment]
+      summary: Create screening question
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job_posting_id, question]
+              properties:
+                job_posting_id: { type: string, format: uuid }
+                question: { type: string }
+                question_type: { type: string, enum: [BOOLEAN, TEXT, NUMBER, SELECT, MULTI_SELECT] }
+                required: { type: boolean }
+      responses:
+        '201': { description: Question created }
+
+  /api/v1/recruitment/screening/{id}:
+    get:
+      tags: [Recruitment]
+      summary: List screening questions for posting
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          description: job_posting_id
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/v1/recruitment/offers:
+    post:
+      tags: [Recruitment]
+      summary: Create job offer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [application_id, position_title]
+              properties:
+                application_id: { type: string, format: uuid }
+                position_title: { type: string }
+                department_id: { type: string, format: uuid }
+                start_date: { type: string, format: date }
+                employment_type: { type: string }
+                work_mode: { type: string }
+                salary_amount: { type: number }
+                salary_currency: { type: string }
+                salary_period: { type: string, enum: [MONTHLY, ANNUAL, WEEKLY, HOURLY] }
+                benefits: { type: string }
+                conditions: { type: string }
+                response_deadline: { type: string, format: date }
+      responses:
+        '201': { description: Offer created }
+
+  /api/v1/recruitment/offers/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get offer
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Offer }
+        '404': { description: Not found }
+
+  /api/v1/recruitment/offers/{id}/send:
+    post:
+      tags: [Recruitment]
+      summary: Send offer to candidate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Sent }
+
+  /api/v1/recruitment/offers/{id}/accept:
+    post:
+      tags: [Recruitment]
+      summary: Accept offer (converts to HIRED)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Accepted }
+
+  /api/v1/recruitment/offers/{id}/reject:
+    post:
+      tags: [Recruitment]
+      summary: Reject offer
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Rejected }
+
+  /api/v1/recruitment/referrals:
+    get:
+      tags: [Recruitment]
+      summary: List employee referrals
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of referrals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    post:
+      tags: [Recruitment]
+      summary: Create employee referral
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [candidate_id]
+              properties:
+                candidate_id: { type: string, format: uuid }
+                notes: { type: string }
+      responses:
+        '201': { description: Referral created }
+
+  /api/v1/recruitment/dashboard:
+    get:
+      tags: [Recruitment]
+      summary: Get recruitment dashboard
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Recruitment dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      open_requisitions: { type: integer }
+                      total_candidates: { type: integer }
+                      applications_this_week: { type: integer }
+                      pending_offers: { type: integer }
+                      hires_this_month: { type: integer }
+                      total_interviews: { type: integer }
+                      avg_time_to_hire: { type: number }
+                      funnel_by_stage:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            stage: { type: string }
+                            count: { type: integer }

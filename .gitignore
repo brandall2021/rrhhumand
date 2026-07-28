@@ -1,0 +1,41 @@
+# Binarios
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+rrhhumand
+cmd/api/api
+
+# Test binarios
+*.test
+
+# Coverage
+*.out
+coverage.html
+
+# Go
+vendor/
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+.env.production
+
+# Temp
+tmp/
+temp/
+*.tmp

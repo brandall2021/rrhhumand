@@ -1,0 +1,13 @@
+DELETE FROM permissions WHERE name LIKE 'scheduling.%';
+DROP TABLE IF EXISTS shift_swaps;
+DROP TABLE IF EXISTS schedule_exceptions;
+DROP TABLE IF EXISTS employee_work_calendar;
+DROP TABLE IF EXISTS employee_rotation_assignments;
+DROP TABLE IF EXISTS rotation_template_days;
+DROP TABLE IF EXISTS rotation_templates;
+DROP TABLE IF EXISTS employee_shift_assignments;
+DROP TABLE IF EXISTS employee_schedule_assignments;
+DROP TABLE IF EXISTS work_schedule_intervals;
+DROP TABLE IF EXISTS work_schedule_days;
+DROP TABLE IF EXISTS shifts;
+DROP TABLE IF EXISTS work_schedules;

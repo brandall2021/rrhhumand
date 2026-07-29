@@ -18,14 +18,14 @@ import (
 	"github.com/rrhhumand/api/internal/handlers"
 	"github.com/rrhhumand/api/internal/leave"
 	"github.com/rrhhumand/api/internal/middleware"
-	"github.com/rrhhumand/api/internal/onboarding"
+	onbhttp "github.com/rrhhumand/api/internal/onboarding/http"
 	"github.com/rrhhumand/api/internal/organization"
 	"github.com/rrhhumand/api/internal/overtime"
 	"github.com/rrhhumand/api/internal/payroll"
 	featureshttp "github.com/rrhhumand/api/internal/payroll/features/http"
 	benefitshttp "github.com/rrhhumand/api/internal/benefits/http"
 	expenseshttp "github.com/rrhhumand/api/internal/expenses/http"
-	"github.com/rrhhumand/api/internal/performance"
+	perfhttp "github.com/rrhhumand/api/internal/performance/http"
 	"github.com/rrhhumand/api/internal/positions"
 	"github.com/rrhhumand/api/internal/profile"
 	recrhttp "github.com/rrhhumand/api/internal/recruitment/http"
@@ -56,10 +56,10 @@ func NewRouter(
 	schedHandler *scheduling.Handler,
 	otHandler *overtime.Handler,
 	payHandler *payroll.Handler,
-	perfHandler *performance.Handler,
+	perfHandler *perfhttp.Handler,
 	recHandler *recrhttp.Handler,
-	onboardingHandler *onboarding.Handler,
 	trainingHandler *training.Handler,
+	onbFase23Handler *onbhttp.Handler,
 	compHandler *compensation.Handler,
 	featuresHandler *featureshttp.Handler,
 	benefitsHandler *benefitshttp.Handler,
@@ -717,75 +717,8 @@ func NewRouter(
 			protected.POST("/me/advances", expensesHandler.MyAdvanceCreate)
 			protected.GET("/me/reimbursements", expensesHandler.MyReimbursements)
 
-			// Performance
-			protected.POST("/performance/cycles", perfHandler.CreateCycle)
-			protected.GET("/performance/cycles", perfHandler.ListCycles)
-			protected.GET("/performance/cycles/:id", perfHandler.GetCycle)
-			protected.PUT("/performance/cycles/:id", perfHandler.UpdateCycle)
-			protected.POST("/performance/cycles/:id/open", perfHandler.OpenCycle)
-			protected.POST("/performance/cycles/:id/close", perfHandler.CloseCycle)
-
-			protected.POST("/performance/templates", perfHandler.CreateTemplate)
-			protected.GET("/performance/templates", perfHandler.ListTemplates)
-
-			protected.POST("/performance/scales", perfHandler.CreateScale)
-			protected.GET("/performance/scales", perfHandler.ListScales)
-
-			protected.POST("/performance/competencies", perfHandler.CreateCompetency)
-			protected.GET("/performance/competencies", perfHandler.ListCompetencies)
-			protected.PUT("/performance/competencies/:id", perfHandler.UpdateCompetency)
-
-			protected.POST("/performance/objectives", perfHandler.CreateObjective)
-			protected.GET("/performance/objectives", perfHandler.ListObjectives)
-			protected.GET("/performance/objectives/:id", perfHandler.GetObjective)
-			protected.PUT("/performance/objectives/:id", perfHandler.UpdateObjective)
-			protected.DELETE("/performance/objectives/:id", perfHandler.DeleteObjective)
-			protected.POST("/performance/objectives/:id/progress", perfHandler.UpdateObjectiveProgress)
-
-			protected.POST("/performance/kpis", perfHandler.CreateKPI)
-			protected.GET("/performance/kpis", perfHandler.ListKPIs)
-			protected.PUT("/performance/kpis/:id", perfHandler.UpdateKPI)
-
-			protected.POST("/performance/evaluators", perfHandler.AssignEvaluators)
-			protected.GET("/performance/evaluators", perfHandler.ListEvaluators)
-
-			protected.POST("/performance/evaluations", perfHandler.CreateEvaluation)
-			protected.GET("/performance/evaluations", perfHandler.ListEvaluations)
-			protected.GET("/performance/evaluations/:id", perfHandler.GetEvaluation)
-			protected.PUT("/performance/evaluations/:id", perfHandler.UpdateEvaluation)
-			protected.POST("/performance/evaluations/:id/submit", perfHandler.SubmitEvaluation)
-			protected.POST("/performance/evaluations/:id/reopen", perfHandler.ReopenEvaluation)
-			protected.POST("/performance/evaluations/:id/approve", perfHandler.ApproveEvaluation)
-
-			protected.POST("/performance/evaluations/:id/answers", perfHandler.CreateAnswer)
-			protected.GET("/performance/evaluations/:id/answers", perfHandler.ListAnswers)
-
-			protected.POST("/performance/evaluations/:id/evidence", perfHandler.CreateEvidence)
-			protected.GET("/performance/evaluations/:id/evidence", perfHandler.ListEvidence)
-
-			protected.POST("/performance/feedback", perfHandler.CreateFeedback)
-			protected.GET("/performance/feedback", perfHandler.ListFeedback)
-			protected.GET("/performance/feedback/:id", perfHandler.GetFeedback)
-
-			protected.POST("/performance/results/calculate", perfHandler.CalculateResult)
-			protected.GET("/performance/results", perfHandler.ListResults)
-			protected.GET("/performance/results/:id", perfHandler.GetResult)
-
-			protected.GET("/performance/scoring-rules", perfHandler.GetScoringRules)
-			protected.PUT("/performance/scoring-rules", perfHandler.UpdateScoringRules)
-
-			protected.POST("/performance/improvement-plans", perfHandler.CreateImprovementPlan)
-			protected.GET("/performance/improvement-plans", perfHandler.ListImprovementPlans)
-			protected.GET("/performance/improvement-plans/:id", perfHandler.GetImprovementPlan)
-			protected.PUT("/performance/improvement-plans/:id", perfHandler.UpdateImprovementPlan)
-			protected.POST("/performance/improvement-plans/:id/complete", perfHandler.CompleteImprovementPlan)
-
-			protected.POST("/performance/development-plans", perfHandler.CreateDevelopmentPlan)
-			protected.GET("/performance/development-plans", perfHandler.ListDevelopmentPlans)
-			protected.GET("/performance/development-plans/:id", perfHandler.GetDevelopmentPlan)
-			protected.PUT("/performance/development-plans/:id", perfHandler.UpdateDevelopmentPlan)
-
-			protected.GET("/performance/dashboard", perfHandler.GetDashboard)
+			// Performance — FASE 24 (DDD)
+			perfHandler.RegisterRoutes(protected)
 
 			// Recruitment (ATS)
 			recHandler.RegisterRoutes(protected)
@@ -795,79 +728,8 @@ func NewRouter(
 			protected.POST("/me/career/referrals", recHandler.CreateReferral)
 			protected.GET("/me/career/interviews", recHandler.MyInterviews)
 
-			// Onboarding (FASE 16)
-			protected.GET("/onboarding/dashboard", onboardingHandler.GetDashboard)
-			protected.GET("/onboarding", onboardingHandler.ListProcesses)
-			protected.POST("/onboarding", onboardingHandler.CreateOnboarding)
-			protected.GET("/onboarding/:id", onboardingHandler.GetProcess)
-			protected.PUT("/onboarding/:id", onboardingHandler.UpdateProcess)
-			protected.POST("/onboarding/:id/start", onboardingHandler.StartOnboarding)
-			protected.POST("/onboarding/:id/hold", onboardingHandler.HoldOnboarding)
-			protected.POST("/onboarding/:id/resume", onboardingHandler.ResumeOnboarding)
-			protected.POST("/onboarding/:id/complete", onboardingHandler.CompleteOnboarding)
-			protected.POST("/onboarding/:id/cancel", onboardingHandler.CancelOnboarding)
-
-			protected.GET("/onboarding/:id/tasks", onboardingHandler.ListTasks)
-			protected.POST("/onboarding/:id/tasks", onboardingHandler.CreateTask)
-			protected.GET("/onboarding/tasks/:taskId", onboardingHandler.GetTask)
-			protected.PUT("/onboarding/tasks/:taskId", onboardingHandler.UpdateTask)
-			protected.POST("/onboarding/tasks/:taskId/start", onboardingHandler.StartTask)
-			protected.POST("/onboarding/tasks/:taskId/complete", onboardingHandler.CompleteTask)
-			protected.POST("/onboarding/tasks/:taskId/block", onboardingHandler.BlockTask)
-
-			protected.GET("/onboarding/:id/documents", onboardingHandler.ListDocuments)
-			protected.POST("/onboarding/:id/documents", onboardingHandler.CreateDocumentRequirement)
-			protected.POST("/onboarding/documents/:id/review", onboardingHandler.ReviewDocument)
-
-			protected.GET("/onboarding/:id/assets", onboardingHandler.ListAssets)
-			protected.POST("/onboarding/:id/assets", onboardingHandler.CreateAsset)
-			protected.POST("/onboarding/assets/:id/assign", onboardingHandler.AssignAsset)
-			protected.POST("/onboarding/assets/:id/deliver", onboardingHandler.DeliverAsset)
-			protected.POST("/onboarding/assets/:id/return", onboardingHandler.ReturnAsset)
-
-			protected.GET("/onboarding/:id/access", onboardingHandler.ListAccessRequests)
-			protected.POST("/onboarding/:id/access", onboardingHandler.CreateAccessRequest)
-			protected.POST("/onboarding/access/:id/approve", onboardingHandler.ApproveAccess)
-			protected.POST("/onboarding/access/:id/reject", onboardingHandler.RejectAccess)
-			protected.POST("/onboarding/access/:id/activate", onboardingHandler.ActivateAccess)
-			protected.POST("/onboarding/access/:id/revoke", onboardingHandler.RevokeAccess)
-
-			protected.GET("/onboarding/:id/milestones", onboardingHandler.ListMilestones)
-			protected.POST("/onboarding/:id/milestones", onboardingHandler.CreateMilestone)
-			protected.PUT("/onboarding/milestones/:id", onboardingHandler.UpdateMilestone)
-			protected.POST("/onboarding/milestones/:id/complete", onboardingHandler.CompleteMilestone)
-
-			protected.GET("/onboarding/:id/feedback", onboardingHandler.ListFeedback)
-			protected.POST("/onboarding/:id/feedback", onboardingHandler.CreateFeedback)
-
-			protected.GET("/onboarding/:id/buddy", onboardingHandler.GetBuddy)
-			protected.POST("/onboarding/:id/buddy", onboardingHandler.AssignBuddy)
-
-			protected.GET("/onboarding/:id/exceptions", onboardingHandler.ListExceptions)
-			protected.POST("/onboarding/:id/exceptions", onboardingHandler.CreateException)
-
-			protected.GET("/onboarding/:id/training", onboardingHandler.ListTraining)
-			protected.POST("/onboarding/:id/training", onboardingHandler.CreateTraining)
-
-			// Onboarding templates
-			protected.GET("/onboarding/templates", onboardingHandler.ListTemplates)
-			protected.POST("/onboarding/templates", onboardingHandler.CreateTemplate)
-			protected.GET("/onboarding/templates/:id", onboardingHandler.GetTemplateWithTasks)
-			protected.PUT("/onboarding/templates/:id", onboardingHandler.UpdateTemplate)
-			protected.DELETE("/onboarding/templates/:id", onboardingHandler.DeleteTemplate)
-			protected.GET("/onboarding/templates/:id/tasks", onboardingHandler.ListTemplateTasks)
-			protected.POST("/onboarding/templates/:id/tasks", onboardingHandler.AddTemplateTask)
-			protected.PUT("/onboarding/templates/tasks/:taskId", onboardingHandler.UpdateTemplateTask)
-			protected.DELETE("/onboarding/templates/tasks/:taskId", onboardingHandler.DeleteTemplateTask)
-
-			// Employee self-service
-			protected.GET("/me/onboarding", onboardingHandler.GetEmployeeDashboard)
-
-			// FASE 15 integration
-			protected.POST("/onboarding/candidate-hired", onboardingHandler.HandleCandidateHired)
-
-			// IA Assistant
-			protected.POST("/ai/onboarding/template-generator", onboardingHandler.GenerateTemplateProposal)
+			// Onboarding & Offboarding (FASE 23)
+			onbFase23Handler.RegisterRoutes(protected)
 
 			// Training / LMS (FASE 17)
 			protected.GET("/training/dashboard/stats", trainingHandler.DashboardStats)

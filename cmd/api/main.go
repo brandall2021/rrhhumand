@@ -25,6 +25,10 @@ import (
 	"github.com/rrhhumand/api/internal/leave"
 	"github.com/rrhhumand/api/internal/notifications"
 	"github.com/rrhhumand/api/internal/onboarding"
+	onbhttp "github.com/rrhhumand/api/internal/onboarding/http"
+	onbintegration "github.com/rrhhumand/api/internal/onboarding/integration"
+	onbrepo "github.com/rrhhumand/api/internal/onboarding/repository"
+	onbwf "github.com/rrhhumand/api/internal/onboarding/workflow"
 	"github.com/rrhhumand/api/internal/organization"
 	"github.com/rrhhumand/api/internal/overtime"
 	"github.com/rrhhumand/api/internal/payroll"
@@ -41,7 +45,9 @@ import (
 	expenseshttp "github.com/rrhhumand/api/internal/expenses/http"
 	expensesrepo "github.com/rrhhumand/api/internal/expenses/repository"
 	"github.com/rrhhumand/api/internal/expenses"
-	"github.com/rrhhumand/api/internal/performance"
+	perfrepo "github.com/rrhhumand/api/internal/performance/repository"
+	perfscoring "github.com/rrhhumand/api/internal/performance/application/scoring"
+	perfhttp "github.com/rrhhumand/api/internal/performance/http"
 	"github.com/rrhhumand/api/internal/positions"
 	"github.com/rrhhumand/api/internal/profile"
 	recrapp "github.com/rrhhumand/api/internal/recruitment/application"
@@ -170,9 +176,45 @@ func main() {
 	payService := payroll.NewService(payRepo, logger.Get())
 	payHandler := payroll.NewHandler(payService)
 
-	perfRepo := performance.NewRepository(pool)
-	perfService := performance.NewService(perfRepo)
-	perfHandler := performance.NewHandler(perfService)
+	perfCycleRepo := perfrepo.NewPostgresRepository(pool)
+	perfTemplateRepo := perfrepo.NewTemplateRepository(pool)
+	perfScaleRepo := perfrepo.NewScaleRepository(pool)
+	perfCompRepo := perfrepo.NewCompetencyRepository(pool)
+	perfObjectiveRepo := perfrepo.NewObjectiveRepository(pool)
+	perfParticipantRepo := perfrepo.NewParticipantRepository(pool)
+	perfEvalRepo := perfrepo.NewEvaluationRepository(pool)
+	perfReviewRepo := perfrepo.NewReviewRepository(pool)
+	perfFeedbackRepo := perfrepo.NewFeedbackRepository(pool)
+	perfCheckInRepo := perfrepo.NewCheckInRepository(pool)
+	perfCalibRepo := perfrepo.NewCalibrationRepository(pool)
+	perfImpRepo := perfrepo.NewImprovementPlanRepository(pool)
+	perfDevRepo := perfrepo.NewDevelopmentPlanRepository(pool)
+	perfEvidenceRepo := perfrepo.NewEvidenceRepository(pool)
+	perfResultRepo := perfrepo.NewResultRepository(pool)
+	perfDashRepo := perfrepo.NewDashboardRepository(pool)
+
+	perfScorer := perfscoring.NewScorer(
+		perfscoring.NewObjectiveScorer(perfObjectiveRepo),
+		perfscoring.NewCompetencyScorer(perfEvalRepo),
+		perfscoring.NewEvaluationScorer(perfEvalRepo),
+		perfscoring.DefaultRatingScale{},
+		perfscoring.Weights{
+			Objective:  60,
+			Competency: 40,
+			Self:       0,
+			Manager:    0,
+			Peer:       0,
+			HR:         0,
+			PeerCount:  0,
+		},
+	)
+
+	perfHandler := perfhttp.NewHandler(
+		perfCycleRepo, perfTemplateRepo, perfScaleRepo, perfCompRepo,
+		perfObjectiveRepo, perfParticipantRepo, perfEvalRepo, perfReviewRepo,
+		perfFeedbackRepo, perfCheckInRepo, perfCalibRepo, perfImpRepo, perfDevRepo,
+		perfEvidenceRepo, perfResultRepo, perfDashRepo, perfScorer,
+	)
 
 	recReqRepo := recrrepo.NewRequisitionRepo(pool)
 	recPosRepo := recrrepo.NewPositionRepo(pool)
@@ -214,8 +256,6 @@ func main() {
 	)
 
 	onboardingRepo := onboarding.NewRepository(pool)
-	onboardingService := onboarding.NewService(onboardingRepo)
-	onboardingHandler := onboarding.NewHandler(onboardingService)
 
 	trainingRepo := training.NewRepository(pool, logger.Get())
 	eventsSvc := events.NewService()
@@ -323,6 +363,48 @@ func main() {
 		expBudgetSvc, expExchangeSvc, expAllowanceSvc,
 	)
 
+	// FASE 23 — Onboarding & Offboarding (DDD)
+	onbOnbRepo := onbrepo.NewOnboardingRepo(pool)
+	onbOffbRepo := onbrepo.NewOffboardingRepo(pool)
+	onbTaskRepo := onbrepo.NewTaskRepo(pool)
+	onbDocRepo := onbrepo.NewDocumentRepo(pool)
+	onbSharedRepo := onbrepo.NewSharedRepo(pool)
+
+	onbEmpSvc := onbintegration.NewEmployeeAdapter()
+	onbDocSvc := onbintegration.NewDocumentAdapter()
+	onbAssetSvc := onbintegration.NewAssetAdapter()
+	onbTrainingSvc := onbintegration.NewTrainingAdapter()
+	onbNotifSvc := onbintegration.NewNotificationAdapter()
+	onbAtsSvc := onbintegration.NewATSAdapter()
+	onbAccessSvc := onbintegration.NewAccessProvisioningAdapter()
+	onbSignSvc := onbintegration.NewSignatureAdapter()
+	onbCalendarSvc := onbintegration.NewCalendarAdapter()
+	onbPayrollSvc := onbintegration.NewPayrollAdapter()
+
+	onbTaskEngine := onbwf.NewTaskEngine(onbEmpSvc, onbAssetSvc, onbTrainingSvc, onbAccessSvc, onbSignSvc)
+
+	onbOnboardingEngine := onbwf.NewOnboardingEngine(
+		onbwf.OnboardingConfig{
+			NotifyAboutOverdueTasks: true,
+			DefaultProbationDays:    90,
+		},
+		onbEmpSvc, onbDocSvc, onbAssetSvc, onbTrainingSvc,
+		onbNotifSvc, onbAtsSvc, onbAccessSvc, onbSignSvc, onbCalendarSvc,
+		onbTaskEngine,
+		onbOnbRepo, onbTaskRepo, onbDocRepo, onbOffbRepo, onbSharedRepo,
+	)
+
+	onbOffboardingEngine := onbwf.NewOffboardingEngine(
+		onbEmpSvc, onbPayrollSvc, onbNotifSvc, onbAccessSvc, onbDocSvc,
+		onbOffbRepo, onbOffbRepo, onbSharedRepo,
+	)
+
+	onbFase23Handler := onbhttp.NewHandler(
+		onbOnboardingEngine, onbOffboardingEngine, onbTaskEngine,
+		onbOnbRepo, onbOffbRepo, onbTaskRepo, onbDocRepo, onbSharedRepo,
+		onbEmpSvc, onbAtsSvc,
+	)
+
 	router := server.NewRouter(
 		healthHandler,
 		authHandler,
@@ -345,12 +427,12 @@ func main() {
 		payHandler,
 		perfHandler,
 		recHandler,
-		onboardingHandler,
 		trainingHandler,
 		compHandler,
 		featuresHandler,
 		benefitsHandler,
 		expensesHandler,
+		onbFase23Handler,
 		pool,
 	)
 

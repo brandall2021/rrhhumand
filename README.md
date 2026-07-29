@@ -12,7 +12,7 @@ Sistema SaaS de Gestión de Recursos Humanos con arquitectura de monolito modula
 | **Pool de conexiones** | pgx/v5 |
 | **Autenticación** | JWT (HS256) + Refresh Tokens |
 | **Object Storage** | MinIO (S3-compatible) |
-| **Containerización** | Docker + Docker Swarm |
+| **Containerización** | Docker |
 | **Logging** | Zap (uber) |
 | **Migraciones** | SQL raw (versionadas) |
 
@@ -38,7 +38,7 @@ rrhhumand/
 │   ├── organization/         # Árbol organizacional
 │   ├── overtime/             # Horas extras y compensaciones
 │   ├── payroll/              # Nómina y compensaciones económicas
-│   ├── performance/          # Evaluación de desempeño
+│   ├── performance/          # Performance Management (DDD)
 │   ├── permissions/          # Permisos RBAC
 │   ├── positions/            # Puestos
 │   ├── profile/              # Perfil de empleado
@@ -72,28 +72,27 @@ rrhhumand/
 - **RBAC granular**: Middleware que verifica permisos en base de datos. SUPER_ADMIN y COMPANY_ADMIN bypass.
 - **API versionada**: Todas las rutas bajo `/api/v1/`.
 
-## Quick Start
+## Quick Start (Desarrollo Local)
 
 ### Prerequisitos
-- Docker + Docker Swarm
 - Go 1.25+
+- Docker
 
-### 1. Levantar servicios
+### 1. Iniciar base de datos
 ```bash
-docker swarm init
-docker stack deploy -c docker-compose.yml rrhh
+docker compose up -d db
 ```
 
-### 2. Ejecutar migraciones
+### 2. Aplicar migraciones
 ```bash
-# Aplicar migraciones en orden
-for dir in migrations/0000*/; do
-  docker exec -i postgres_postgres.1.<id> psql -U postgres -d rrhhumand < "$dir/up.sql"
+for dir in migrations/*/; do
+  PGPASSWORD=Mfcd62!!Mfcd62!! psql -h localhost -p 5433 -U postgres -d rrhhumand -f "${dir}up.sql"
 done
 ```
 
 ### 3. Correr la API
 ```bash
+cp .env.example .env
 go run cmd/api/main.go
 ```
 
@@ -103,6 +102,84 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@rrhh.com","password":"Admin123!"}'
 ```
+
+---
+
+## Deploy con Dokploy
+
+### Requisitos
+
+- [Dokploy](https://dokploy.com) v0.x+ instalado en un VPS
+- Repositorio Git accesible desde Dokploy
+- PostgreSQL 16+ como servicio externo o add-on de Dokploy
+- (Opcional) MinIO para almacenamiento de documentos
+
+### Variables de Entorno
+
+Crear un `.env` en Dokploy con todas las variables definidas en `.env.example`.
+
+**Obligatorias:**
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `DATABASE_HOST` | Host de PostgreSQL | `postgres.internal` |
+| `DATABASE_PORT` | Puerto de PostgreSQL | `5432` |
+| `DATABASE_USER` | Usuario BD | `postgres` |
+| `DATABASE_PASSWORD` | Contraseña BD | `securepassword` |
+| `DATABASE_NAME` | Nombre BD | `rrhhumand` |
+| `JWT_SECRET` | Clave secreta JWT (mín. 32 caracteres) | `your-256-bit-secret` |
+| `APP_ENV` | `production` | `production` |
+| `APP_DEBUG` | `false` en producción | `false` |
+
+**Opcionales:**
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `APP_PORT` | `8080` | Puerto del contenedor |
+| `DATABASE_SSLMODE` | `disable` | Modo SSL PostgreSQL |
+| `DATABASE_MAX_OPEN_CONNS` | `25` | Conexiones abiertas máx. |
+| `DATABASE_MAX_IDLE_CONNS` | `5` | Conexiones inactivas máx. |
+| `JWT_EXPIRATION` | `15m` | Expiración token acceso |
+| `JWT_REFRESH_EXPIRATION` | `7d` | Expiración refresh token |
+| `MINIO_ENDPOINT` | `localhost:9000` | Endpoint MinIO |
+| `MINIO_ACCESS_KEY` | `minioadmin` | Access Key MinIO |
+| `MINIO_SECRET_KEY` | `minioadmin` | Secret Key MinIO |
+| `MINIO_BUCKET` | `rrhhumand` | Bucket MinIO |
+| `MINIO_REGION` | `us-east-1` | Región MinIO |
+| `MINIO_USE_SSL` | `false` | SSL para MinIO |
+| `MAX_UPLOAD_SIZE_MB` | `25` | Tamaño máx. upload (MB) |
+| `LOG_LEVEL` | `info` | Nivel de log |
+| `LOG_FORMAT` | `json` | Formato de log (`json` o `console`) |
+
+### Configuración en Dokploy
+
+1. **Crear proyecto** en el dashboard de Dokploy.
+2. **Conectar repositorio** Git que contiene el código.
+3. **Build**: Seleccionar **Dockerfile** (Dokploy lo detecta automáticamente).
+   - Puerto: `8080`
+4. **Variables de entorno**: Copiar todas las variables de la tabla superior.
+5. **Base de datos**: Agregar un servicio PostgreSQL o conectar uno externo. Configurar `DATABASE_*` apuntando al host correcto.
+6. **Volumen** (opcional para persistencia de migrations): No es necesario, las migraciones se ejecutan en cada deploy.
+7. **Deploy**: Dokploy construye la imagen con `docker build` usando el `Dockerfile` y despliega el contenedor.
+
+### Comportamiento del Entrypoint
+
+El entrypoint (`docker/entrypoint.sh`) hace lo siguiente al iniciar el contenedor:
+
+1. Espera a que PostgreSQL esté disponible (`pg_isready`).
+2. Ejecuta todas las migraciones SQL en orden numérico (`migrations/*/up.sql`).
+3. Inicia el servidor Go.
+
+### Notas para Producción
+
+- **JWT_SECRET**: Usar una clave de al menos 256 bits. Generar con:
+  ```bash
+  openssl rand -base64 32
+  ```
+- **MinIO**: Si no se usa MinIO, el servidor inicia igual pero las funciones de documentos no estarán disponibles.
+- **Migraciones**: Son **idempotentes** — se ejecutan en cada deploy sin riesgo de duplicar datos.
+- **Workers**: El servidor inicia automáticamente workers en goroutines para payroll, benefits, expenses y recruitment.
+- **Base de datos separada**: Para producción, usar una instancia PostgreSQL administrada (RDS, Cloud SQL, Supabase, etc.) en lugar del contenedor local.
 
 ---
 
@@ -341,24 +418,54 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 **Objetivo**: Sistema 360° de evaluación con ciclos, plantillas, escalas, competencias, objetivos, KPIs, evaluadores, scoring engine y planes de mejora/desarrollo.
 
-- **Ciclos de evaluación**: Períodos de evaluación con lifecycle
-- **Plantillas**: Secciones con items configurables
-- **Escalas de calificación**: Niveles personalizados
-- **Competencias**: Definición de competencias por empresa
-- **Objetivos**: Metas medibles por empleado/ciclo con pesos
-- **KPIs**: Indicadores clave con targets
-- **Evaluadores 360°**: SELF, MANAGER, PEER, HR
-- **Evaluaciones**: Respuestas por sección/item con scoring
-- **Feedback continuo**: Comentarios entre empleados
-- **Evidencias**: Documentos adjuntos a evaluaciones
-- **Resultados**: Score final ponderado con rating
-- **Scoring Engine**: Cálculo configurable de pesos (objetivo, competencia, KPI, self, manager, peer, HR)
-- **Planes de mejora**: Con acciones y seguimiento
-- **Planes de desarrollo (IDP)**: Desarrollo individual con timeline
-- **Dashboard**: Métricas y distribución de ratings
-- 15 permisos granulares
+- **Nota**: Reemplazada por la **FASE 24 (DDD)** — mismo alcance funcional, arquitectura rediseñada con Domain-Driven Design.
 
-**Tablas**: `performance_cycles`, `evaluation_templates`, `template_sections`, `template_section_items`, `rating_scales`, `rating_scale_levels`, `competencies`, `performance_scoring_rules`, `performance_objectives`, `performance_kpis`, `performance_evaluators`, `performance_evaluations`, `performance_evaluation_answers`, `performance_feedback`, `performance_evidence`, `performance_results`, `performance_improvement_plans`, `performance_improvement_actions`, `performance_development_plans`, `performance_development_actions`, `performance_audit_log`
+---
+
+### FASE 24 — Performance Management (DDD)
+
+**Objetivo**: Refactorización completa del módulo de desempeño con arquitectura DDD en capas, aislando dominio, repositorios, servicios de aplicación, motores de scoring/workflow e integraciones.
+
+#### Arquitectura del Módulo
+
+```
+internal/performance/
+├── domain/                 # 10 entidades de negocio + errores + filtros
+│   ├── performance_cycle.go
+│   ├── template.go
+│   ├── evaluation.go
+│   ├── objective.go
+│   ├── competency.go
+│   ├── feedback.go
+│   ├── evidence.go
+│   ├── calibration.go
+│   ├── plans.go
+│   └── errors.go
+├── repository/             # 8 repositorios (interfaces + PostgreSQL)
+│   ├── interfaces.go
+│   ├── cycle_repo.go
+│   ├── template_repo.go
+│   ├── evaluation_repo.go
+│   ├── objective_repo.go
+│   ├── feedback_repo.go
+│   ├── plan_repo.go
+│   └── misc_repo.go
+├── application/            # Servicios + motores
+│   ├── service/            # CycleService, ObjectiveService, EvaluationService, etc.
+│   ├── scoring/            # Scorer con adapters + DefaultRatingScale
+│   ├── workflow/           # StateMachine para ciclo, evaluación y plan
+│   └── ai/                 # Stub de integración con IA
+├── http/                   # Handler REST + DTOs
+│   ├── handler.go          # 87 endpoints
+│   └── dto.go              # Request/Response types
+└── integration/            # Adapters para integraciones externas
+```
+
+**Scoring Engine**: Calcula puntuación final ponderada combinando objetivos (60%), competencias (40%), y evaluaciones multi-fuente (SELF, MANAGER, PEER, HR) con pesos configurables. Incluye `DefaultRatingScale` con 5 niveles.
+
+**Workflow Engine**: Máquinas de estado para ciclo (DRAFT → OPEN → IN_PROGRESS → REVIEW → CALIBRATION → CLOSED), evaluación (DRAFT → SUBMITTED → APPROVED/LOCKED) y plan de mejora (DRAFT → ACTIVE → COMPLETED).
+
+**Tablas**: `performance_cycles`, `evaluation_templates`, `template_sections`, `template_questions`, `rating_scales`, `rating_scale_levels`, `competencies`, `competency_levels`, `position_competencies`, `cycle_competencies`, `performance_objectives`, `objective_key_results`, `performance_participants`, `performance_evaluations`, `evaluation_answers`, `objective_evaluations`, `competency_evaluations`, `performance_reviews`, `performance_feedback`, `performance_recognitions`, `performance_checkins`, `calibration_sessions`, `calibration_items`, `performance_evidence`, `improvement_plans`, `improvement_plan_actions`, `development_plans`, `development_plan_actions`, `performance_results`, `performance_dashboard`, `performance_audit_log`, `outbox_events`
 
 ---
 
@@ -497,7 +604,7 @@ REQUISITION → APPROVAL → POSITION → POSTING → APPLICATION
 | 11 | Turnos, Horarios y Planificación | ✅ Completada |
 | 12 | Horas Extras y Compensaciones | ✅ Completada |
 | 13 | Nómina, Compensaciones Económicas y Beneficios | ✅ Completada |
-| 14 | Evaluación de Desempeño | ✅ Completada |
+| 14 | Evaluación de Desempeño | ✅ Completada (reemplazada por FASE 24) |
 | 15 | Reclutamiento y Selección (ATS) | ⏳ Reemplazada por FASE 22 |
 | 16 | Onboarding | ✅ Completada |
 | 17 | Notificaciones | ⏳ Pendiente |
@@ -507,12 +614,14 @@ REQUISITION → APPROVAL → POSITION → POSTING → APPLICATION
 | 20 | Benefits & Total Rewards | ✅ Completada |
 | 21 | Expenses & Travel | ✅ Completada |
 | 22 | Reclutamiento y Selección (ATS Completo) | ✅ Completada |
+| 23 | Onboarding & Offboarding (DDD) | ✅ Completada |
+| 24 | Performance Management (DDD) | ✅ Completada |
 
 ## Estadísticas del Proyecto
 
 | Métrica | Valor |
 |---------|-------|
-| Fases completadas | 20 / 23 |
+| Fases completadas | 23 / 24 |
 | Archivos Go | 120+ |
 | Tablas PostgreSQL | 150+ |
 | Endpoints API | 350+ |

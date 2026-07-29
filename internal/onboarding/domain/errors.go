@@ -1,0 +1,32 @@
+package domain
+
+import "errors"
+
+var (
+	ErrOnboardingNotFound        = errors.New("onboarding process not found")
+	ErrOffboardingNotFound       = errors.New("offboarding process not found")
+	ErrTemplateNotFound          = errors.New("template not found")
+	ErrTaskNotFound              = errors.New("task not found")
+	ErrDocumentNotFound          = errors.New("document not found")
+	ErrAssetNotFound             = errors.New("asset not found")
+	ErrExitInterviewNotFound     = errors.New("exit interview not found")
+	ErrInvalidStatus             = errors.New("invalid status transition")
+	ErrTaskDependencyNotMet      = errors.New("task dependency not completed")
+	ErrRequiredTasksNotCompleted = errors.New("required tasks not completed")
+	ErrRequiredDocsNotApproved   = errors.New("required documents not approved")
+	ErrOnboardingAlreadyExists   = errors.New("active onboarding already exists for this employee")
+	ErrOffboardingAlreadyExists  = errors.New("active offboarding already exists for this employee")
+	ErrEmployeeNotFound          = errors.New("employee not found")
+	ErrCandidateNotFound         = errors.New("candidate not found")
+	ErrDuplicateEvent            = errors.New("duplicate event detected")
+	ErrInvalidTenant             = errors.New("invalid tenant")
+	ErrUnauthorized              = errors.New("unauthorized access")
+	ErrAssetNotAssigned          = errors.New("asset not assigned to this employee")
+	ErrAccessNotPending          = errors.New("access revocation is not pending")
+	ErrOnboardingCompleted       = errors.New("onboarding already completed")
+	ErrOnboardingCancelled       = errors.New("onboarding is cancelled")
+	ErrOffboardingCompleted      = errors.New("offboarding already completed")
+	ErrProbationAlreadyEvaluated = errors.New("probation already evaluated")
+	ErrInvalidDate               = errors.New("invalid date")
+	ErrNoteNotFound              = errors.New("note not found")
+)

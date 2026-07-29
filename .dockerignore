@@ -1,0 +1,11 @@
+.env
+.env.*
+.git
+.gitignore
+.vscode
+.idea
+*.md
+bin/
+tmp/
+vendor/
+coverage.*

@@ -914,5 +914,14 @@ func NewRouter(
 		}
 	}
 
+	// Serve frontend SPA (build from frontend/dist)
+	frontendDir := "./frontend/dist"
+	if _, err := http.Dir(frontendDir).Open("."); err == nil {
+		router.Static("/assets", frontendDir+"/assets")
+		router.NoRoute(func(c *gin.Context) {
+			c.File(frontendDir + "/index.html")
+		})
+	}
+
 	return router
 }

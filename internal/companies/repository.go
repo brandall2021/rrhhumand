@@ -42,6 +42,22 @@ func (r *CompanyRepository) FindByID(ctx context.Context, id string) (*models.Co
 	return company, nil
 }
 
+func (r *CompanyRepository) FindBySlug(ctx context.Context, slug string) (*models.Company, error) {
+	query := `
+		SELECT id, name, slug, logo_url, plan, settings, active, created_at, updated_at
+		FROM companies WHERE slug = $1`
+	company := &models.Company{}
+	err := r.pool.QueryRow(ctx, query, slug).Scan(
+		&company.ID, &company.Name, &company.Slug, &company.LogoURL,
+		&company.Plan, &company.Settings, &company.Active,
+		&company.CreatedAt, &company.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return company, nil
+}
+
 func (r *CompanyRepository) Update(ctx context.Context, company *models.Company) error {
 	query := `
 		UPDATE companies

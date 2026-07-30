@@ -23,8 +23,17 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	companyID := c.Query("company_id")
+	if companyID == "" && req.CompanySlug != "" {
+		company, err := h.service.companyResolver.FindBySlug(c.Request.Context(), req.CompanySlug)
+		if err != nil {
+			response.BadRequest(c, "Invalid company")
+			return
+		}
+		companyID = company.ID
+	}
+
 	if companyID == "" {
-		response.BadRequest(c, "company_id query parameter required")
+		response.BadRequest(c, "company_id query parameter or company_slug in body required")
 		return
 	}
 

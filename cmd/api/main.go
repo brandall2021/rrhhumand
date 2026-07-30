@@ -101,10 +101,10 @@ func main() {
 		cfg.JWT.Expiration,
 		cfg.JWT.RefreshExpiration,
 	)
-	authService := auth.NewAuthService(userRepo, refreshTokenRepo, jwtService, roleRepo)
-	authHandler := auth.NewAuthHandler(authService)
-
 	companyRepo := companies.NewCompanyRepository(pool)
+
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, jwtService, roleRepo, companyRepo)
+	authHandler := auth.NewAuthHandler(authService)
 	companyService := companies.NewCompanyService(companyRepo)
 	companyHandler := companies.NewCompanyHandler(companyService)
 

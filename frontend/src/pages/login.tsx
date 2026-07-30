@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [companySlug, setCompanySlug] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -19,7 +20,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
+      await login(email, password, companySlug)
       navigate('/')
     } catch {
       setError('Credenciales inválidas. Intenta de nuevo.')
@@ -43,6 +44,16 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="company">Empresa</Label>
+                <Input
+                  id="company"
+                  type="text"
+                  placeholder="techcorp-ar"
+                  value={companySlug}
+                  onChange={(e) => setCompanySlug(e.target.value)}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

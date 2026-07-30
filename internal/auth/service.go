@@ -76,11 +76,16 @@ type RoleRepositoryInterface interface {
 	FindByName(ctx context.Context, name string) (*models.Role, error)
 }
 
+type CompanyResolver interface {
+	FindBySlug(ctx context.Context, slug string) (*models.Company, error)
+}
+
 type AuthService struct {
-	userRepo   UserRepositoryInterface
-	tokenRepo  *RefreshTokenRepository
-	jwtService *JWTService
-	roleRepo   RoleRepositoryInterface
+	userRepo        UserRepositoryInterface
+	tokenRepo       *RefreshTokenRepository
+	jwtService      *JWTService
+	roleRepo        RoleRepositoryInterface
+	companyResolver CompanyResolver
 }
 
 func NewAuthService(
@@ -88,18 +93,21 @@ func NewAuthService(
 	tokenRepo *RefreshTokenRepository,
 	jwtService *JWTService,
 	roleRepo RoleRepositoryInterface,
+	companyResolver CompanyResolver,
 ) *AuthService {
 	return &AuthService{
-		userRepo:   userRepo,
-		tokenRepo:  tokenRepo,
-		jwtService: jwtService,
-		roleRepo:   roleRepo,
+		userRepo:        userRepo,
+		tokenRepo:       tokenRepo,
+		jwtService:      jwtService,
+		roleRepo:        roleRepo,
+		companyResolver: companyResolver,
 	}
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	Password    string `json:"password" validate:"required"`
+	CompanySlug string `json:"company_slug"`
 }
 
 type LoginResponse struct {

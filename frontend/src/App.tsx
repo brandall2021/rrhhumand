@@ -2,6 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/auth-context'
 import LoginPage from '@/pages/login'
 import DashboardPage from '@/pages/dashboard'
+import EmployeesPage from '@/pages/employees'
+import DepartmentsPage from '@/pages/departments'
+import PositionsPage from '@/pages/positions'
+import RecruitmentPage from '@/pages/recruitment'
+import TrainingPage from '@/pages/training'
+import CompensationPage from '@/pages/compensation'
+import ExpensesPage from '@/pages/expenses'
+import DocumentsPage from '@/pages/documents'
 import AppLayout from '@/layouts/app-layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -39,7 +47,14 @@ function App() {
             }
           >
             <Route index element={<DashboardPage />} />
-            {/* Future module routes will be added here */}
+            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="departments" element={<DepartmentsPage />} />
+            <Route path="positions" element={<PositionsPage />} />
+            <Route path="recruitment" element={<RecruitmentPage />} />
+            <Route path="training" element={<TrainingPage />} />
+            <Route path="compensation" element={<CompensationPage />} />
+            <Route path="expenses" element={<ExpensesPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

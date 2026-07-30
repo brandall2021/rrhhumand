@@ -19,12 +19,16 @@ func NewAuditRepo(pool *pgxpool.Pool) *AuditRepo {
 	return &AuditRepo{pool: pool}
 }
 
+func (r *AuditRepo) Log(ctx context.Context, a *domain.ExpenseAuditLog) error {
+	return r.Create(ctx, a)
+}
+
 func (r *AuditRepo) Create(ctx context.Context, a *domain.ExpenseAuditLog) error {
 	q := `INSERT INTO expense_audit_logs (id,company_id,entity_type,entity_id,action,actor_id,
 		changes,ip_address,user_agent)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
-	_, err := r.pool.Exec(ctx, q, a.ID, a.CompanyID, a.EntityType, a.EntityID, a.Action, a.ActorID,
-		a.Changes, a.IPAddress, a.UserAgent)
+	_, err := r.pool.Exec(ctx, q, a.ID, a.CompanyID, a.EntityType, a.EntityID, a.Action, a.UserID,
+		map[string]any{"old_values": a.OldValues, "new_values": a.NewValues}, a.IP, a.UserAgent)
 	return repoErr("AuditRepo.Create", err)
 }
 
@@ -75,8 +79,22 @@ func (r *AuditRepo) List(ctx context.Context, companyID uuid.UUID, entityType, e
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpenseAuditLog, error) {
 		var a domain.ExpenseAuditLog
-		err := row.Scan(&a.ID, &a.CompanyID, &a.EntityType, &a.EntityID, &a.Action, &a.ActorID,
-			&a.Changes, &a.IPAddress, &a.UserAgent, &a.CreatedAt)
-		return a, err
+		var changes map[string]any
+		err := row.Scan(&a.ID, &a.CompanyID, &a.EntityType, &a.EntityID, &a.Action, &a.UserID,
+			&changes, &a.IP, &a.UserAgent, &a.CreatedAt)
+		if err != nil {
+			return a, err
+		}
+		if oldVals, ok := changes["old_values"]; ok {
+			if m, ok := oldVals.(map[string]any); ok {
+				a.OldValues = m
+			}
+		}
+		if newVals, ok := changes["new_values"]; ok {
+			if m, ok := newVals.(map[string]any); ok {
+				a.NewValues = m
+			}
+		}
+		return a, nil
 	})
 }

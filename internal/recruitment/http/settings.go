@@ -2,18 +2,19 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreateSource(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RecruitmentSource
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.CreateSource(c.Request.Context(), companyID, req)
+	data, err := h.SettingsSvc.CreateSource(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -33,12 +34,13 @@ func (h *Handler) ListSources(c *gin.Context) {
 
 func (h *Handler) UpdateSource(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RecruitmentSource
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.UpdateSource(c.Request.Context(), companyID, c.Param("id"), req)
+	req.ID = c.Param("id")
+	data, err := h.SettingsSvc.UpdateSource(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -48,12 +50,12 @@ func (h *Handler) UpdateSource(c *gin.Context) {
 
 func (h *Handler) CreateStage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RecruitmentStage
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.CreateStage(c.Request.Context(), companyID, req)
+	data, err := h.SettingsSvc.CreateStage(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -73,12 +75,13 @@ func (h *Handler) ListStages(c *gin.Context) {
 
 func (h *Handler) UpdateStage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RecruitmentStage
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.UpdateStage(c.Request.Context(), companyID, c.Param("id"), req)
+	req.ID = c.Param("id")
+	data, err := h.SettingsSvc.UpdateStage(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -88,12 +91,14 @@ func (h *Handler) UpdateStage(c *gin.Context) {
 
 func (h *Handler) ReorderStages(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req struct {
+		StageIDs []string `json:"stage_ids"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	if err := h.SettingsSvc.ReorderStages(c.Request.Context(), companyID, req); err != nil {
+	if err := h.SettingsSvc.ReorderStages(c.Request.Context(), companyID, req.StageIDs); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -102,12 +107,12 @@ func (h *Handler) ReorderStages(c *gin.Context) {
 
 func (h *Handler) CreateTransition(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.StageTransition
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.CreateTransition(c.Request.Context(), companyID, req)
+	data, err := h.SettingsSvc.CreateTransition(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -136,12 +141,12 @@ func (h *Handler) DeleteTransition(c *gin.Context) {
 
 func (h *Handler) CreateRejectionReason(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RejectionReason
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.CreateRejectionReason(c.Request.Context(), companyID, req)
+	data, err := h.SettingsSvc.CreateRejectionReason(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -161,12 +166,13 @@ func (h *Handler) ListRejectionReasons(c *gin.Context) {
 
 func (h *Handler) UpdateRejectionReason(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RejectionReason
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.SettingsSvc.UpdateRejectionReason(c.Request.Context(), companyID, c.Param("id"), req)
+	req.ID = c.Param("id")
+	data, err := h.SettingsSvc.UpdateRejectionReason(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return

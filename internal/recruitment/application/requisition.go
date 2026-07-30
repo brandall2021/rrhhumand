@@ -127,7 +127,7 @@ func (s *RequisitionService) Submit(ctx context.Context, companyID, id string) e
 	if r.Status != domain.ReqStatusDraft {
 		return svcErr(op, domain.ErrInvalidStatus)
 	}
-	return s.requisitionRepo.UpdateStatus(ctx, companyID, id, domain.ReqStatusPendingApproval)
+	return s.requisitionRepo.UpdateStatus(ctx, companyID, id, string(domain.ReqStatusPendingApproval))
 }
 
 func (s *RequisitionService) Approve(ctx context.Context, companyID, id string) error {
@@ -182,6 +182,27 @@ func (s *RequisitionService) Close(ctx context.Context, companyID, id string, re
 	return err
 }
 
+func (s *RequisitionService) AddSkill(ctx context.Context, companyID, requisitionID string, skill *domain.RequisitionSkill) (*domain.RequisitionSkill, error) {
+	const op = "AddRequisitionSkill"
+	skill.ID = uuid.New().String()
+	skill.RequisitionID = requisitionID
+	result, err := s.requisitionRepo.AddSkill(ctx, skill)
+	if err != nil {
+		return nil, svcErr(op, err)
+	}
+	return result, nil
+}
+
+func (s *RequisitionService) ListSkills(ctx context.Context, companyID, requisitionID string) ([]domain.RequisitionSkill, error) {
+	const op = "ListRequisitionSkills"
+	return s.requisitionRepo.ListSkills(ctx, requisitionID)
+}
+
+func (s *RequisitionService) RemoveSkill(ctx context.Context, companyID, requisitionID, skillID string) error {
+	const op = "RemoveRequisitionSkill"
+	return s.requisitionRepo.RemoveSkill(ctx, skillID)
+}
+
 func (s *RequisitionService) Cancel(ctx context.Context, companyID, id string) error {
 	const op = "CancelRequisition"
 	r, err := s.requisitionRepo.GetByID(ctx, companyID, id)
@@ -191,5 +212,5 @@ func (s *RequisitionService) Cancel(ctx context.Context, companyID, id string) e
 	if r.Status == domain.ReqStatusApproved || r.Status == domain.ReqStatusCancelled {
 		return svcErr(op, domain.ErrInvalidStatus)
 	}
-	return s.requisitionRepo.UpdateStatus(ctx, companyID, id, domain.ReqStatusCancelled)
+	return s.requisitionRepo.UpdateStatus(ctx, companyID, id, string(domain.ReqStatusCancelled))
 }

@@ -18,7 +18,7 @@ func NewReimbursementRepo(pool *pgxpool.Pool) *ReimbursementRepo {
 	return &ReimbursementRepo{pool: pool}
 }
 
-func scanReimbursement(row pgx.CollectableRow) (domain.BenefitReimbursement, error) {
+func scanReimbursement(row pgx.Row) (domain.BenefitReimbursement, error) {
 	var r domain.BenefitReimbursement
 	err := row.Scan(&r.ID, &r.CompanyID, &r.EmployeeID, &r.BenefitID, &r.FlexiblePlanID, &r.WalletID,
 		&r.RequestID, &r.Category, &r.Description, &r.Amount, &r.ApprovedAmount, &r.Currency,
@@ -85,7 +85,19 @@ func (r *ReimbursementRepo) List(ctx context.Context, companyID, employeeID, ben
 		return nil, repoErr("List", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanReimbursement)
+	var result []domain.BenefitReimbursement
+	for rows.Next() {
+		var r domain.BenefitReimbursement
+		err := rows.Scan(&r.ID, &r.CompanyID, &r.EmployeeID, &r.BenefitID, &r.FlexiblePlanID, &r.WalletID,
+			&r.RequestID, &r.Category, &r.Description, &r.Amount, &r.ApprovedAmount, &r.Currency,
+			&r.ReceiptDate, &r.ExpenseDate, &r.Status, &r.RejectionReason, &r.PaymentMethod, &r.PaidAt,
+			&r.PaymentReference, &r.SubmittedBy, &r.ReviewedBy, &r.ReviewedAt, &r.CreatedAt, &r.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("List", err)
+		}
+		result = append(result, r)
+	}
+	return result, nil
 }
 
 func (r *ReimbursementRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string, reviewedBy *uuid.UUID) error {
@@ -109,9 +121,14 @@ func (r *ReimbursementRepo) ListDocuments(ctx context.Context, reimbursementID u
 		return nil, repoErr("ListDocuments", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.BenefitReimbursementDocument, error) {
+	var result []domain.BenefitReimbursementDocument
+	for rows.Next() {
 		var d domain.BenefitReimbursementDocument
-		err := row.Scan(&d.ID, &d.ReimbursementID, &d.FileName, &d.FileType, &d.FileSize, &d.StoragePath, &d.OCRText, &d.IsVerified, &d.UploadedBy, &d.UploadedAt)
-		return d, err
-	})
+		err := rows.Scan(&d.ID, &d.ReimbursementID, &d.FileName, &d.FileType, &d.FileSize, &d.StoragePath, &d.OCRText, &d.IsVerified, &d.UploadedBy, &d.UploadedAt)
+		if err != nil {
+			return nil, repoErr("ListDocuments", err)
+		}
+		result = append(result, d)
+	}
+	return result, nil
 }

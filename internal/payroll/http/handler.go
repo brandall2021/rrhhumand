@@ -5,14 +5,14 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rrhhumand/api/internal/payroll/domain"
+	"github.com/rrhhumand/api/internal/payroll/application"
 )
 
 type Handler struct {
-	svc *domain.PayrollService
+	svc *application.PayrollService
 }
 
-func NewHandler(svc *domain.PayrollService) *Handler {
+func NewHandler(svc *application.PayrollService) *Handler {
 	return &Handler{svc: svc}
 }
 
@@ -374,7 +374,7 @@ func (h *Handler) ImportNovelties(c *gin.Context) {
 	if !bindJSON(c, &req) {
 		return
 	}
-	inputs := make([]domain.CreateNoveltyInput, len(req.Novelties))
+	inputs := make([]application.CreateNoveltyInput, len(req.Novelties))
 	for i, nr := range req.Novelties {
 		inputs[i] = nr.ToInput()
 	}

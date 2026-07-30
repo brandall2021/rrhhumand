@@ -18,17 +18,21 @@ func NewDuplicateRepo(pool *pgxpool.Pool) *DuplicateRepo {
 }
 
 func (r *DuplicateRepo) Create(ctx context.Context, d *domain.ExpenseDuplicateCheck) error {
-	q := `INSERT INTO expense_duplicate_checks (id,expense_id,matched_expense_id,similarity_score,
-		match_reason,status,reviewed_by,reviewed_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`
-	_, err := r.pool.Exec(ctx, q, d.ID, d.ExpenseID, d.MatchedExpenseID, d.SimilarityScore,
-		d.MatchReason, d.Status, d.ReviewedBy, d.ReviewedAt)
+	q := `INSERT INTO expense_duplicate_checks (id,company_id,expense_id,duplicate_expense_id,match_score,
+		match_reason,status,resolved_by,resolved_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
+	_, err := r.pool.Exec(ctx, q, d.ID, d.CompanyID, d.ExpenseID, d.DuplicateExpenseID, d.MatchScore,
+		d.MatchReason, d.Status, d.ResolvedBy, d.ResolvedAt)
 	return repoErr("DuplicateRepo.Create", err)
 }
 
+func (r *DuplicateRepo) FindByExpenseID(ctx context.Context, expenseID uuid.UUID) ([]domain.ExpenseDuplicateCheck, error) {
+	return r.ListByExpense(ctx, expenseID)
+}
+
 func (r *DuplicateRepo) ListByExpense(ctx context.Context, expenseID uuid.UUID) ([]domain.ExpenseDuplicateCheck, error) {
-	q := `SELECT id,expense_id,matched_expense_id,similarity_score,match_reason,status,reviewed_by,reviewed_at,created_at
-		FROM expense_duplicate_checks WHERE expense_id=$1 ORDER BY similarity_score DESC`
+	q := `SELECT id,company_id,expense_id,duplicate_expense_id,match_score,match_reason,status,resolved_by,resolved_at,created_at
+		FROM expense_duplicate_checks WHERE expense_id=$1 ORDER BY match_score DESC`
 	rows, err := r.pool.Query(ctx, q, expenseID)
 	if err != nil {
 		return nil, repoErr("DuplicateRepo.ListByExpense", err)
@@ -36,14 +40,14 @@ func (r *DuplicateRepo) ListByExpense(ctx context.Context, expenseID uuid.UUID) 
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpenseDuplicateCheck, error) {
 		var d domain.ExpenseDuplicateCheck
-		err := row.Scan(&d.ID, &d.ExpenseID, &d.MatchedExpenseID, &d.SimilarityScore, &d.MatchReason,
-			&d.Status, &d.ReviewedBy, &d.ReviewedAt, &d.CreatedAt)
+		err := row.Scan(&d.ID, &d.CompanyID, &d.ExpenseID, &d.DuplicateExpenseID, &d.MatchScore, &d.MatchReason,
+			&d.Status, &d.ResolvedBy, &d.ResolvedAt, &d.CreatedAt)
 		return d, err
 	})
 }
 
-func (r *DuplicateRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string, reviewedBy *uuid.UUID) error {
-	q := `UPDATE expense_duplicate_checks SET status=$1,reviewed_by=$2,reviewed_at=NOW() WHERE id=$3`
-	_, err := r.pool.Exec(ctx, q, status, reviewedBy, id)
+func (r *DuplicateRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string, resolvedBy *uuid.UUID) error {
+	q := `UPDATE expense_duplicate_checks SET status=$1,resolved_by=$2,resolved_at=NOW() WHERE id=$3`
+	_, err := r.pool.Exec(ctx, q, status, resolvedBy, id)
 	return repoErr("DuplicateRepo.UpdateStatus", err)
 }

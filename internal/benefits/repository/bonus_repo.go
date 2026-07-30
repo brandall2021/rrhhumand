@@ -18,7 +18,7 @@ func NewBonusRepo(pool *pgxpool.Pool) *BonusRepo {
 	return &BonusRepo{pool: pool}
 }
 
-func scanBonus(row pgx.CollectableRow) (domain.EmployeeBonus, error) {
+func scanBonus(row pgx.Row) (domain.EmployeeBonus, error) {
 	var b domain.EmployeeBonus
 	err := row.Scan(&b.ID, &b.CompanyID, &b.EmployeeID, &b.BonusType, &b.Name, &b.Description,
 		&b.Amount, &b.Currency, &b.PaymentType, &b.InstallmentCount, &b.InstallmentAmount,
@@ -78,7 +78,21 @@ func (r *BonusRepo) ListBonuses(ctx context.Context, employeeID uuid.UUID, statu
 		return nil, repoErr("ListBonuses", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanBonus)
+	var result []domain.EmployeeBonus
+	for rows.Next() {
+		var b domain.EmployeeBonus
+		err := rows.Scan(&b.ID, &b.CompanyID, &b.EmployeeID, &b.BonusType, &b.Name, &b.Description,
+			&b.Amount, &b.Currency, &b.PaymentType, &b.InstallmentCount, &b.InstallmentAmount,
+			&b.Frequency, &b.GrantDate, &b.VestingStart, &b.VestingEnd, &b.PaymentDate,
+			&b.Status, &b.ClawbackAmount, &b.ClawbackReason, &b.PerformancePeriodStart, &b.PerformancePeriodEnd,
+			&b.PerformanceScore, &b.IsTaxable, &b.TaxWithholding, &b.NetAmount, &b.ApprovedBy, &b.ApprovedAt,
+			&b.PaidInPayroll, &b.PayrollRunID, &b.Notes, &b.CreatedBy, &b.CreatedAt, &b.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("ListBonuses", err)
+		}
+		result = append(result, b)
+	}
+	return result, nil
 }
 
 func (r *BonusRepo) UpdateBonus(ctx context.Context, b *domain.EmployeeBonus) error {
@@ -102,7 +116,7 @@ func (r *BonusRepo) UpdateBonusStatus(ctx context.Context, id uuid.UUID, status 
 	return repoErr("UpdateBonusStatus", err)
 }
 
-func scanIncentive(row pgx.CollectableRow) (domain.EmployeeIncentive, error) {
+func scanIncentive(row pgx.Row) (domain.EmployeeIncentive, error) {
 	var i domain.EmployeeIncentive
 	err := row.Scan(&i.ID, &i.CompanyID, &i.EmployeeID, &i.IncentiveType, &i.Name, &i.Description,
 		&i.Value, &i.Currency, &i.AwardDate, &i.ExpiryDate, &i.RedemptionDate, &i.Status,
@@ -147,7 +161,18 @@ func (r *BonusRepo) ListIncentives(ctx context.Context, employeeID uuid.UUID, st
 		return nil, repoErr("ListIncentives", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanIncentive)
+	var result []domain.EmployeeIncentive
+	for rows.Next() {
+		var i domain.EmployeeIncentive
+		err := rows.Scan(&i.ID, &i.CompanyID, &i.EmployeeID, &i.IncentiveType, &i.Name, &i.Description,
+			&i.Value, &i.Currency, &i.AwardDate, &i.ExpiryDate, &i.RedemptionDate, &i.Status,
+			&i.PointsCost, &i.IsTaxable, &i.AwardedBy, &i.Notes, &i.CreatedAt, &i.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("ListIncentives", err)
+		}
+		result = append(result, i)
+	}
+	return result, nil
 }
 
 func (r *BonusRepo) UpdateIncentive(ctx context.Context, i *domain.EmployeeIncentive) error {
@@ -165,7 +190,7 @@ func (r *BonusRepo) UpdateIncentiveStatus(ctx context.Context, id uuid.UUID, sta
 	return repoErr("UpdateIncentiveStatus", err)
 }
 
-func scanPayrollMapping(row pgx.CollectableRow) (domain.BenefitPayrollMapping, error) {
+func scanPayrollMapping(row pgx.Row) (domain.BenefitPayrollMapping, error) {
 	var pm domain.BenefitPayrollMapping
 	err := row.Scan(&pm.ID, &pm.CompanyID, &pm.BenefitID, &pm.FlexiblePlanID, &pm.EmployeeBenefitID,
 		&pm.BonusID, &pm.MappingType, &pm.PayrollConceptID, &pm.Amount, &pm.Currency, &pm.Frequency,
@@ -214,7 +239,19 @@ func (r *BonusRepo) ListPayrollMappings(ctx context.Context, benefitID uuid.UUID
 		return nil, repoErr("ListPayrollMappings", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanPayrollMapping)
+	var result []domain.BenefitPayrollMapping
+	for rows.Next() {
+		var pm domain.BenefitPayrollMapping
+		err := rows.Scan(&pm.ID, &pm.CompanyID, &pm.BenefitID, &pm.FlexiblePlanID, &pm.EmployeeBenefitID,
+			&pm.BonusID, &pm.MappingType, &pm.PayrollConceptID, &pm.Amount, &pm.Currency, &pm.Frequency,
+			&pm.EffectiveFrom, &pm.EffectiveTo, &pm.IsActive, &pm.LastSyncedAt, &pm.SyncStatus, &pm.SyncError,
+			&pm.CreatedAt, &pm.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("ListPayrollMappings", err)
+		}
+		result = append(result, pm)
+	}
+	return result, nil
 }
 
 func (r *BonusRepo) UpdatePayrollMapping(ctx context.Context, pm *domain.BenefitPayrollMapping) error {

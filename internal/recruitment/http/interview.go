@@ -2,18 +2,20 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreateInterview(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req application.CreateInterviewReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.InterviewSvc.Create(c.Request.Context(), companyID, req)
+	data, err := h.InterviewSvc.Create(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -23,7 +25,7 @@ func (h *Handler) CreateInterview(c *gin.Context) {
 
 func (h *Handler) ListInterviews(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.InterviewSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.InterviewSvc.List(c.Request.Context(), companyID, c.Query("application_id"), c.Query("status"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -43,12 +45,12 @@ func (h *Handler) GetInterview(c *gin.Context) {
 
 func (h *Handler) UpdateInterview(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Interview
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.InterviewSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.InterviewSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -76,7 +78,7 @@ func (h *Handler) CompleteInterview(c *gin.Context) {
 
 func (h *Handler) AddPanelMember(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.InterviewPanelMember
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -91,7 +93,7 @@ func (h *Handler) AddPanelMember(c *gin.Context) {
 
 func (h *Handler) RemovePanelMember(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.InterviewSvc.RemovePanelMember(c.Request.Context(), companyID, c.Param("panelId")); err != nil {
+	if err := h.InterviewSvc.RemovePanelMember(c.Request.Context(), companyID, c.Query("interview_id"), c.Param("panelId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -111,12 +113,12 @@ func (h *Handler) ListPanelMembers(c *gin.Context) {
 func (h *Handler) SubmitInterviewFeedback(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
 	userID := tenant.GetUserID(c)
-	var req map[string]any
+	var req application.SubmitFeedbackReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.InterviewSvc.SubmitFeedback(c.Request.Context(), companyID, c.Param("id"), userID, req)
+	data, err := h.InterviewSvc.SubmitFeedback(c.Request.Context(), companyID, c.Param("id"), userID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -125,7 +127,8 @@ func (h *Handler) SubmitInterviewFeedback(c *gin.Context) {
 }
 
 func (h *Handler) ListInterviewFeedback(c *gin.Context) {
-	data, err := h.InterviewSvc.ListFeedback(c.Request.Context(), c.Param("id"))
+	companyID := tenant.GetCompanyID(c)
+	data, err := h.InterviewSvc.ListFeedback(c.Request.Context(), companyID, c.Param("id"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return

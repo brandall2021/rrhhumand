@@ -52,13 +52,18 @@ func (r *RewardsRepo) ListItems(ctx context.Context, companyID uuid.UUID) ([]dom
 		return nil, repoErr("ListItems", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.TotalRewardsItem, error) {
+	var result []domain.TotalRewardsItem
+	for rows.Next() {
 		var item domain.TotalRewardsItem
-		err := row.Scan(&item.ID, &item.CompanyID, &item.Name, &item.Category, &item.Description,
+		err := rows.Scan(&item.ID, &item.CompanyID, &item.Name, &item.Category, &item.Description,
 			&item.AmountType, &item.AmountValue, &item.AmountPercentage, &item.Currency, &item.Frequency,
 			&item.DisplayOrder, &item.IsMonetary, &item.IncludeInStatement, &item.Icon, &item.Color, &item.IsActive, &item.CreatedBy, &item.CreatedAt, &item.UpdatedAt)
-		return item, err
-	})
+		if err != nil {
+			return nil, repoErr("ListItems", err)
+		}
+		result = append(result, item)
+	}
+	return result, nil
 }
 
 func (r *RewardsRepo) UpdateItem(ctx context.Context, item *domain.TotalRewardsItem) error {
@@ -73,7 +78,7 @@ func (r *RewardsRepo) UpdateItem(ctx context.Context, item *domain.TotalRewardsI
 	return repoErr("UpdateItem", err)
 }
 
-func scanSnapshot(row pgx.CollectableRow) (domain.TotalRewardsSnapshot, error) {
+func scanSnapshot(row pgx.Row) (domain.TotalRewardsSnapshot, error) {
 	var s domain.TotalRewardsSnapshot
 	err := row.Scan(&s.ID, &s.CompanyID, &s.EmployeeID, &s.SnapshotDate, &s.FiscalYear, &s.PeriodName,
 		&s.BaseSalary, &s.VariablePay, &s.BonusesTotal, &s.IncentivesTotal, &s.BenefitsTotal,
@@ -136,7 +141,20 @@ func (r *RewardsRepo) ListSnapshots(ctx context.Context, companyID uuid.UUID, fi
 		return nil, repoErr("ListSnapshots", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanSnapshot)
+	var result []domain.TotalRewardsSnapshot
+	for rows.Next() {
+		var s domain.TotalRewardsSnapshot
+		err := rows.Scan(&s.ID, &s.CompanyID, &s.EmployeeID, &s.SnapshotDate, &s.FiscalYear, &s.PeriodName,
+			&s.BaseSalary, &s.VariablePay, &s.BonusesTotal, &s.IncentivesTotal, &s.BenefitsTotal,
+			&s.EmployerContributions, &s.FlexibleSpending, &s.InsuranceValue, &s.DevelopmentValue,
+			&s.WellnessValue, &s.RecognitionValue, &s.PerksValue, &s.TotalRewards, &s.Currency,
+			&s.Items, &s.Metadata, &s.GeneratedBy, &s.GeneratedAt, &s.CreatedAt)
+		if err != nil {
+			return nil, repoErr("ListSnapshots", err)
+		}
+		result = append(result, s)
+	}
+	return result, nil
 }
 
 func (r *RewardsRepo) CreateNotification(ctx context.Context, n *domain.BenefitNotificationLog) error {
@@ -176,11 +194,16 @@ func (r *RewardsRepo) ListNotifications(ctx context.Context, employeeID, notific
 		return nil, repoErr("ListNotifications", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.BenefitNotificationLog, error) {
+	var result []domain.BenefitNotificationLog
+	for rows.Next() {
 		var n domain.BenefitNotificationLog
-		err := row.Scan(&n.ID, &n.CompanyID, &n.EmployeeID, &n.NotificationType, &n.Channel, &n.Title, &n.Body, &n.Metadata, &n.ReadAt, &n.SentAt, &n.CreatedAt)
-		return n, err
-	})
+		err := rows.Scan(&n.ID, &n.CompanyID, &n.EmployeeID, &n.NotificationType, &n.Channel, &n.Title, &n.Body, &n.Metadata, &n.ReadAt, &n.SentAt, &n.CreatedAt)
+		if err != nil {
+			return nil, repoErr("ListNotifications", err)
+		}
+		result = append(result, n)
+	}
+	return result, nil
 }
 
 func (r *RewardsRepo) MarkRead(ctx context.Context, id uuid.UUID) error {
@@ -215,11 +238,16 @@ func (r *RewardsRepo) ListReportDefinitions(ctx context.Context, companyID uuid.
 		return nil, repoErr("ListReportDefinitions", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.BenefitReportDefinition, error) {
+	var result []domain.BenefitReportDefinition
+	for rows.Next() {
 		var d domain.BenefitReportDefinition
-		err := row.Scan(&d.ID, &d.CompanyID, &d.Name, &d.Description, &d.ReportType, &d.Config, &d.ScheduleCron, &d.Recipients, &d.IsActive, &d.CreatedBy, &d.CreatedAt, &d.UpdatedAt)
-		return d, err
-	})
+		err := rows.Scan(&d.ID, &d.CompanyID, &d.Name, &d.Description, &d.ReportType, &d.Config, &d.ScheduleCron, &d.Recipients, &d.IsActive, &d.CreatedBy, &d.CreatedAt, &d.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("ListReportDefinitions", err)
+		}
+		result = append(result, d)
+	}
+	return result, nil
 }
 
 func (r *RewardsRepo) UpdateReportDefinition(ctx context.Context, d *domain.BenefitReportDefinition) error {
@@ -274,10 +302,15 @@ func (r *RewardsRepo) ListReportResults(ctx context.Context, definitionID, compa
 		return nil, repoErr("ListReportResults", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.BenefitReportResult, error) {
+	var result []domain.BenefitReportResult
+	for rows.Next() {
 		var res domain.BenefitReportResult
-		err := row.Scan(&res.ID, &res.DefinitionID, &res.CompanyID, &res.ReportType, &res.PeriodStart, &res.PeriodEnd,
+		err := rows.Scan(&res.ID, &res.DefinitionID, &res.CompanyID, &res.ReportType, &res.PeriodStart, &res.PeriodEnd,
 			&res.FileName, &res.FileContent, &res.StoragePath, &res.FileSize, &res.Format, &res.Status, &res.ErrorMessage, &res.GeneratedBy, &res.GeneratedAt, &res.CreatedAt)
-		return res, err
-	})
+		if err != nil {
+			return nil, repoErr("ListReportResults", err)
+		}
+		result = append(result, res)
+	}
+	return result, nil
 }

@@ -87,17 +87,17 @@ func (s *AssessmentService) Update(ctx context.Context, companyID, id string, re
 
 func (s *AssessmentService) Send(ctx context.Context, companyID, id string) error {
 	const op = "SendAssessment"
-	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, domain.AssStatusSent, nil, nil)
+	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, string(domain.AssStatusSent), nil, nil)
 }
 
 func (s *AssessmentService) Score(ctx context.Context, companyID, id string, req *ScoreAssessmentReq) error {
 	const op = "ScoreAssessment"
-	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, domain.AssStatusCompleted, req.Score, req.Result)
+	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, string(domain.AssStatusCompleted), req.Score, req.Result)
 }
 
 func (s *AssessmentService) Cancel(ctx context.Context, companyID, id string) error {
 	const op = "CancelAssessment"
-	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, domain.AssStatusCancelled, nil, nil)
+	return s.assessmentRepo.UpdateStatus(ctx, companyID, id, string(domain.AssStatusCancelled), nil, nil)
 }
 
 func (s *AssessmentService) AddSection(ctx context.Context, companyID, assessmentID string, section domain.AssessmentSection) (*domain.AssessmentSection, error) {

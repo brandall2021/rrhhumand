@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
@@ -9,12 +11,12 @@ import (
 func (h *Handler) CreateOffer(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
 	userID := tenant.GetUserID(c)
-	var req map[string]any
+	var req application.CreateOfferReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.OfferSvc.Create(c.Request.Context(), companyID, userID, req)
+	data, err := h.OfferSvc.Create(c.Request.Context(), companyID, userID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -24,7 +26,7 @@ func (h *Handler) CreateOffer(c *gin.Context) {
 
 func (h *Handler) ListOffers(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.OfferSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.OfferSvc.List(c.Request.Context(), companyID, c.Query("application_id"), c.Query("status"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -44,12 +46,12 @@ func (h *Handler) GetOffer(c *gin.Context) {
 
 func (h *Handler) UpdateOffer(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Offer
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.OfferSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.OfferSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -95,12 +97,7 @@ func (h *Handler) AcceptOffer(c *gin.Context) {
 
 func (h *Handler) RejectOffer(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request body")
-		return
-	}
-	if err := h.OfferSvc.Reject(c.Request.Context(), companyID, c.Param("id"), req); err != nil {
+	if err := h.OfferSvc.Reject(c.Request.Context(), companyID, c.Param("id")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -128,7 +125,7 @@ func (h *Handler) ListOfferNegotiations(c *gin.Context) {
 
 func (h *Handler) AddOfferNegotiation(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.OfferNegotiation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -143,17 +140,17 @@ func (h *Handler) AddOfferNegotiation(c *gin.Context) {
 
 func (h *Handler) UpdateOfferNegotiation(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.OfferNegotiation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.OfferSvc.UpdateNegotiation(c.Request.Context(), companyID, c.Param("negId"), req)
+	err := h.OfferSvc.UpdateNegotiation(c.Request.Context(), companyID, c.Param("negId"), req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "negotiation updated"})
 }
 
 func (h *Handler) ListOfferDocuments(c *gin.Context) {
@@ -168,7 +165,7 @@ func (h *Handler) ListOfferDocuments(c *gin.Context) {
 
 func (h *Handler) AddOfferDocument(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.OfferDocument
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return

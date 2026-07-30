@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/rrhhumand/api/internal/payroll/domain"
-	"github.com/rrhhumand/api/internal/payroll/repository"
 )
 
 type CreateConceptInput struct {
@@ -118,11 +117,7 @@ func (s *PayrollService) GetConcept(ctx context.Context, companyID, id string) (
 }
 
 func (s *PayrollService) ListConcepts(ctx context.Context, companyID string, conceptType, taxability *string, active *bool) ([]domain.PayrollConcept, error) {
-	concepts, err := s.repo.ListConcepts(ctx, companyID, repository.ConceptFilter{
-		ConceptType: conceptType,
-		Taxability:  taxability,
-		Active:      active,
-	})
+	concepts, err := s.repo.ListConcepts(ctx, companyID, conceptType, taxability, active)
 	if err != nil {
 		return nil, fmt.Errorf("list concepts: %w", err)
 	}

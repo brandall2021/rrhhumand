@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -1152,7 +1151,7 @@ func (s *Service) GetEmployeeResult(ctx context.Context, companyID, runID, emplo
 	if err != nil {
 		return nil, svcErr("GetEmployeeResult", err)
 	}
-	items, _ := s.repo.ListItems(ctx, re.ID)
+	_, _ = s.repo.ListItems(ctx, re.ID)
 	return &EmployeeResult{
 		EmployeeID:          re.EmployeeID,
 		Status:              re.Status,
@@ -1163,7 +1162,7 @@ func (s *Service) GetEmployeeResult(ctx context.Context, companyID, runID, emplo
 		EmployerContributions: re.EmployerContributions.InexactFloat64(),
 		EmployerCost:        re.EmployerCost.InexactFloat64(),
 		Error:               re.ErrorMessage,
-	}
+	}, nil
 }
 
 func (s *Service) GetEmployeeItems(ctx context.Context, companyID, runID, employeeID string) ([]PayrollItem, error) {

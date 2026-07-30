@@ -3,7 +3,7 @@ package http
 import (
 	"time"
 
-	"github.com/rrhhumand/api/internal/payroll/domain"
+	"github.com/rrhhumand/api/internal/payroll/application"
 )
 
 // ========================================================================
@@ -20,8 +20,8 @@ type CreatePeriodReq struct {
 	PaymentDate *time.Time `json:"payment_date,omitempty"`
 }
 
-func (r CreatePeriodReq) ToInput() domain.CreatePeriodInput {
-	return domain.CreatePeriodInput{
+func (r CreatePeriodReq) ToInput() application.CreatePeriodInput {
+	return application.CreatePeriodInput{
 		Year: r.Year, Month: r.Month, PeriodType: r.PeriodType, Name: r.Name,
 		StartDate: r.StartDate, EndDate: r.EndDate, PaymentDate: r.PaymentDate,
 	}
@@ -32,8 +32,8 @@ type UpdatePeriodReq struct {
 	PaymentDate *time.Time `json:"payment_date,omitempty"`
 }
 
-func (r UpdatePeriodReq) ToInput() domain.UpdatePeriodInput {
-	return domain.UpdatePeriodInput{Name: r.Name, PaymentDate: r.PaymentDate}
+func (r UpdatePeriodReq) ToInput() application.UpdatePeriodInput {
+	return application.UpdatePeriodInput{Name: r.Name, PaymentDate: r.PaymentDate}
 }
 
 type CreateRunReq struct {
@@ -55,8 +55,8 @@ type CreateConceptReq struct {
 	SortOrder       int     `json:"sort_order"`
 }
 
-func (r CreateConceptReq) ToInput() domain.CreateConceptInput {
-	return domain.CreateConceptInput{
+func (r CreateConceptReq) ToInput() application.CreateConceptInput {
+	return application.CreateConceptInput{
 		Code: r.Code, Name: r.Name, Description: r.Description,
 		ConceptType: r.ConceptType, Taxability: r.Taxability, CalculationType: r.CalculationType,
 		BaseConceptID: r.BaseConceptID, SortOrder: r.SortOrder,
@@ -74,8 +74,8 @@ type UpdateConceptReq struct {
 	SortOrder       *int    `json:"sort_order,omitempty"`
 }
 
-func (r UpdateConceptReq) ToInput() domain.UpdateConceptInput {
-	return domain.UpdateConceptInput{
+func (r UpdateConceptReq) ToInput() application.UpdateConceptInput {
+	return application.UpdateConceptInput{
 		Name: r.Name, Description: r.Description, ConceptType: r.ConceptType,
 		Taxability: r.Taxability, CalculationType: r.CalculationType,
 		BaseConceptID: r.BaseConceptID, Active: r.Active, SortOrder: r.SortOrder,
@@ -96,8 +96,8 @@ type CreateRuleReq struct {
 	EffectiveTo   *string        `json:"effective_to,omitempty"`
 }
 
-func (r CreateRuleReq) ToInput() domain.CreateRuleInput {
-	return domain.CreateRuleInput{
+func (r CreateRuleReq) ToInput() application.CreateRuleInput {
+	return application.CreateRuleInput{
 		ConceptID: r.ConceptID, RuleType: r.RuleType, Formula: r.Formula,
 		Parameters: r.Parameters, Priority: r.Priority,
 		EffectiveFrom: &r.EffectiveFrom, EffectiveTo: r.EffectiveTo,
@@ -113,8 +113,8 @@ type UpdateRuleReq struct {
 	EffectiveTo *string        `json:"effective_to,omitempty"`
 }
 
-func (r UpdateRuleReq) ToInput() domain.UpdateRuleInput {
-	return domain.UpdateRuleInput{
+func (r UpdateRuleReq) ToInput() application.UpdateRuleInput {
+	return application.UpdateRuleInput{
 		RuleType: r.RuleType, Formula: r.Formula, Parameters: r.Parameters,
 		Priority: r.Priority, Active: r.Active, EffectiveTo: r.EffectiveTo,
 	}
@@ -138,8 +138,8 @@ type CreateNoveltyReq struct {
 	Source      string   `json:"source"`
 }
 
-func (r CreateNoveltyReq) ToInput() domain.CreateNoveltyInput {
-	return domain.CreateNoveltyInput{
+func (r CreateNoveltyReq) ToInput() application.CreateNoveltyInput {
+	return application.CreateNoveltyInput{
 		EmployeeID: r.EmployeeID, NoveltyType: r.NoveltyType,
 		Quantity: r.Quantity, Unit: r.Unit, Amount: r.Amount, UnitValue: r.UnitValue,
 		Multiplier: r.Multiplier, StartDate: r.StartDate, EndDate: r.EndDate,
@@ -154,8 +154,8 @@ type UpdateNoveltyReq struct {
 	Status      *string  `json:"status,omitempty"`
 }
 
-func (r UpdateNoveltyReq) ToInput() domain.UpdateNoveltyInput {
-	return domain.UpdateNoveltyInput{Quantity: r.Quantity, Amount: r.Amount, Description: r.Description, Status: r.Status}
+func (r UpdateNoveltyReq) ToInput() application.UpdateNoveltyInput {
+	return application.UpdateNoveltyInput{Quantity: r.Quantity, Amount: r.Amount, Description: r.Description, Status: r.Status}
 }
 
 type ImportNoveltiesReq struct {
@@ -174,8 +174,8 @@ type CreateAdvanceReq struct {
 	Reason      *string  `json:"reason,omitempty"`
 }
 
-func (r CreateAdvanceReq) ToInput() domain.CreateAdvanceInput {
-	return domain.CreateAdvanceInput{
+func (r CreateAdvanceReq) ToInput() application.CreateAdvanceInput {
+	return application.CreateAdvanceInput{
 		EmployeeID: r.EmployeeID, Amount: r.Amount, RequestDate: r.RequestDate,
 		Installments: r.Installments, Reason: r.Reason,
 	}
@@ -196,8 +196,8 @@ type CreateGarnishmentReq struct {
 	EffectiveFrom    string   `json:"effective_from" binding:"required"`
 }
 
-func (r CreateGarnishmentReq) ToInput() domain.CreateGarnishmentInput {
-	return domain.CreateGarnishmentInput{
+func (r CreateGarnishmentReq) ToInput() application.CreateGarnishmentInput {
+	return application.CreateGarnishmentInput{
 		EmployeeID: r.EmployeeID, CourtOrderNumber: r.CourtOrderNumber,
 		CourtName: r.CourtName, Type: r.Type, Percentage: r.Percentage,
 		FixedAmount: r.FixedAmount, Priority: r.Priority, EffectiveFrom: r.EffectiveFrom,
@@ -216,8 +216,8 @@ type CreateAgreementReq struct {
 	EffectiveFrom string  `json:"effective_from" binding:"required"`
 }
 
-func (r CreateAgreementReq) ToInput() domain.CreateAgreementInput {
-	return domain.CreateAgreementInput{
+func (r CreateAgreementReq) ToInput() application.CreateAgreementInput {
+	return application.CreateAgreementInput{
 		Code: r.Code, Name: r.Name, Description: r.Description,
 		Activity: r.Activity, EffectiveFrom: r.EffectiveFrom,
 	}
@@ -230,8 +230,8 @@ type CreateCategoryReq struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func (r CreateCategoryReq) ToInput() domain.CreateCategoryInput {
-	return domain.CreateCategoryInput{
+func (r CreateCategoryReq) ToInput() application.CreateCategoryInput {
+	return application.CreateCategoryInput{
 		AgreementID: r.AgreementID, Code: r.Code, Name: r.Name, Description: r.Description,
 	}
 }
@@ -243,8 +243,8 @@ type CreateSalaryScaleReq struct {
 	MaximumSalary *float64 `json:"maximum_salary,omitempty"`
 }
 
-func (r CreateSalaryScaleReq) ToInput() domain.CreateSalaryScaleInput {
-	return domain.CreateSalaryScaleInput{
+func (r CreateSalaryScaleReq) ToInput() application.CreateSalaryScaleInput {
+	return application.CreateSalaryScaleInput{
 		AgreementID: r.AgreementID, CategoryID: r.CategoryID,
 		MinimumSalary: r.MinimumSalary, MaximumSalary: r.MaximumSalary,
 	}

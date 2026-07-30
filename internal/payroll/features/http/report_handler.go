@@ -107,7 +107,7 @@ func (h *Handler) GenerateReport(c *gin.Context) {
 }
 
 func (h *Handler) ListExportsReport(c *gin.Context) {
-	list, err := h.ReportSvc.ListExports(c.Request.Context(), companyID(c))
+	list, err := h.ReportSvc.ListReportExports(c.Request.Context(), companyID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -121,7 +121,7 @@ func (h *Handler) GetExportReport(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	e, err := h.ReportSvc.GetExport(c.Request.Context(), companyID(c), id)
+	e, err := h.ReportSvc.GetReportExport(c.Request.Context(), companyID(c), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "export not found"})
 		return

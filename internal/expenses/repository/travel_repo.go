@@ -19,13 +19,31 @@ func NewTravelRepo(pool *pgxpool.Pool) *TravelRepo {
 	return &TravelRepo{pool: pool}
 }
 
+func (r *TravelRepo) Create(ctx context.Context, t *domain.Travel) error {
+	return r.CreateTravel(ctx, t)
+}
+
 func (r *TravelRepo) CreateTravel(ctx context.Context, t *domain.Travel) error {
 	q := `INSERT INTO travels (id,company_id,employee_id,purpose,origin,destination,departure_at,return_at,
 		expected_cost,currency,status,notes,created_by)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
 	_, err := r.pool.Exec(ctx, q, t.ID, t.CompanyID, t.EmployeeID, t.Purpose, t.Origin, t.Destination,
-		t.DepartureAt, t.ReturnAt, t.ExpectedCost, t.Currency, t.Status, t.Notes, t.CreatedBy)
+		t.DepartureDate, t.ReturnDate, t.EstimatedBudget, t.Currency, t.Status, t.Notes, t.CreatedBy)
 	return repoErr("CreateTravel", err)
+}
+
+func (r *TravelRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Travel, error) {
+	q := `SELECT id,company_id,employee_id,purpose,origin,destination,departure_at,return_at,
+		expected_cost,currency,status,notes,created_by,created_at,updated_at
+		FROM travels WHERE id=$1`
+	row := r.pool.QueryRow(ctx, q, id)
+	var t domain.Travel
+	err := row.Scan(&t.ID, &t.CompanyID, &t.EmployeeID, &t.Purpose, &t.Origin, &t.Destination,
+		&t.DepartureDate, &t.ReturnDate, &t.EstimatedBudget, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
+	if err != nil {
+		return nil, repoErr("TravelRepo.GetByID", err)
+	}
+	return &t, nil
 }
 
 func (r *TravelRepo) GetTravel(ctx context.Context, companyID, id uuid.UUID) (*domain.Travel, error) {
@@ -35,11 +53,50 @@ func (r *TravelRepo) GetTravel(ctx context.Context, companyID, id uuid.UUID) (*d
 	row := r.pool.QueryRow(ctx, q, id, companyID)
 	var t domain.Travel
 	err := row.Scan(&t.ID, &t.CompanyID, &t.EmployeeID, &t.Purpose, &t.Origin, &t.Destination,
-		&t.DepartureAt, &t.ReturnAt, &t.ExpectedCost, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
+		&t.DepartureDate, &t.ReturnDate, &t.EstimatedBudget, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, repoErr("GetTravel", err)
 	}
 	return &t, nil
+}
+
+func (r *TravelRepo) List(ctx context.Context, companyID uuid.UUID, employeeID *uuid.UUID, status *string, limit, offset int) ([]domain.Travel, error) {
+	q := `SELECT id,company_id,employee_id,purpose,origin,destination,departure_at,return_at,
+		expected_cost,currency,status,notes,created_by,created_at,updated_at
+		FROM travels WHERE company_id=$1`
+	args := []any{companyID}
+	n := 2
+	if employeeID != nil {
+		q += fmt.Sprintf(" AND employee_id=$%d", n)
+		args = append(args, *employeeID)
+		n++
+	}
+	if status != nil {
+		q += fmt.Sprintf(" AND status=$%d", n)
+		args = append(args, *status)
+		n++
+	}
+	q += " ORDER BY departure_at DESC"
+	if limit > 0 {
+		q += fmt.Sprintf(" LIMIT $%d", n)
+		args = append(args, limit)
+		n++
+	}
+	if offset > 0 {
+		q += fmt.Sprintf(" OFFSET $%d", n)
+		args = append(args, offset)
+	}
+	rows, err := r.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, repoErr("TravelRepo.List", err)
+	}
+	defer rows.Close()
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Travel, error) {
+		var t domain.Travel
+		err := row.Scan(&t.ID, &t.CompanyID, &t.EmployeeID, &t.Purpose, &t.Origin, &t.Destination,
+			&t.DepartureDate, &t.ReturnDate, &t.EstimatedBudget, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
+		return t, err
+	})
 }
 
 func (r *TravelRepo) ListTravels(ctx context.Context, companyID uuid.UUID, employeeID *uuid.UUID, status *string, from, to *time.Time) ([]domain.Travel, error) {
@@ -77,16 +134,24 @@ func (r *TravelRepo) ListTravels(ctx context.Context, companyID uuid.UUID, emplo
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Travel, error) {
 		var t domain.Travel
 		err := row.Scan(&t.ID, &t.CompanyID, &t.EmployeeID, &t.Purpose, &t.Origin, &t.Destination,
-			&t.DepartureAt, &t.ReturnAt, &t.ExpectedCost, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
+			&t.DepartureDate, &t.ReturnDate, &t.EstimatedBudget, &t.Currency, &t.Status, &t.Notes, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
 		return t, err
 	})
+}
+
+func (r *TravelRepo) Update(ctx context.Context, t *domain.Travel) error {
+	q := `UPDATE travels SET purpose=$1,origin=$2,destination=$3,departure_at=$4,return_at=$5,
+		expected_cost=$6,currency=$7,status=$8,notes=$9,updated_at=NOW() WHERE id=$10`
+	_, err := r.pool.Exec(ctx, q, t.Purpose, t.Origin, t.Destination, t.DepartureDate, t.ReturnDate,
+		t.EstimatedBudget, t.Currency, t.Status, t.Notes, t.ID)
+	return repoErr("TravelRepo.Update", err)
 }
 
 func (r *TravelRepo) UpdateTravel(ctx context.Context, t *domain.Travel) error {
 	q := `UPDATE travels SET purpose=$1,origin=$2,destination=$3,departure_at=$4,return_at=$5,
 		expected_cost=$6,currency=$7,status=$8,notes=$9,updated_at=NOW() WHERE id=$10 AND company_id=$11`
-	_, err := r.pool.Exec(ctx, q, t.Purpose, t.Origin, t.Destination, t.DepartureAt, t.ReturnAt,
-		t.ExpectedCost, t.Currency, t.Status, t.Notes, t.ID, t.CompanyID)
+	_, err := r.pool.Exec(ctx, q, t.Purpose, t.Origin, t.Destination, t.DepartureDate, t.ReturnDate,
+		t.EstimatedBudget, t.Currency, t.Status, t.Notes, t.ID, t.CompanyID)
 	return repoErr("UpdateTravel", err)
 }
 

@@ -7,6 +7,7 @@ type OfferStatus string
 const (
     OfferStatusDraft     OfferStatus = "DRAFT"
     OfferStatusPendingApproval OfferStatus = "PENDING_APPROVAL"
+    OfferStatusApproved  OfferStatus = "APPROVED"
     OfferStatusSent      OfferStatus = "SENT"
     OfferStatusAccepted  OfferStatus = "ACCEPTED"
     OfferStatusRejected  OfferStatus = "REJECTED"

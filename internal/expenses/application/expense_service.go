@@ -27,7 +27,9 @@ type ExpenseRepository interface {
 
 type ReceiptRepository interface {
 	Create(ctx context.Context, receipt *domain.ExpenseReceipt) error
-	FindByExpenseID(ctx context.Context, expenseID uuid.UUID) ([]domain.ExpenseReceipt, error)
+	Get(ctx context.Context, id uuid.UUID) (*domain.ExpenseReceipt, error)
+	ListByExpense(ctx context.Context, expenseID uuid.UUID) ([]domain.ExpenseReceipt, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type DuplicateRepository interface {
@@ -302,6 +304,50 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, companyID, id uuid.U
 	s.auditRepo.Log(ctx, &domain.ExpenseAuditLog{
 		ID: uuid.New(), CompanyID: companyID,
 		Action: "expense.deleted", EntityType: "expense", EntityID: id, CreatedAt: time.Now(),
+	})
+	return nil
+}
+
+func (s *ExpenseService) UploadReceipt(ctx context.Context, companyID, expenseID, userID uuid.UUID, filename, contentType string, content []byte) (*domain.ExpenseReceipt, error) {
+	const op = "UploadReceipt"
+	now := time.Now()
+	receipt := &domain.ExpenseReceipt{
+		ID:         uuid.New(),
+		CompanyID:  companyID,
+		ExpenseID:  expenseID,
+		Filename:   filename,
+		MimeType:   contentType,
+		Size:       int64(len(content)),
+		UploadedBy: userID,
+		UploadedAt: now,
+	}
+	if err := s.receiptRepo.Create(ctx, receipt); err != nil {
+		return nil, svcErr(op, err)
+	}
+	s.auditRepo.Log(ctx, &domain.ExpenseAuditLog{
+		ID: uuid.New(), CompanyID: companyID, UserID: userID,
+		Action: "receipt.uploaded", EntityType: "expense_receipt", EntityID: receipt.ID, CreatedAt: now,
+	})
+	return receipt, nil
+}
+
+func (s *ExpenseService) ListReceipts(ctx context.Context, companyID, expenseID uuid.UUID) ([]domain.ExpenseReceipt, error) {
+	const op = "ListReceipts"
+	receipts, err := s.receiptRepo.ListByExpense(ctx, expenseID)
+	if err != nil {
+		return nil, svcErr(op, err)
+	}
+	return receipts, nil
+}
+
+func (s *ExpenseService) DeleteReceipt(ctx context.Context, companyID, id uuid.UUID) error {
+	const op = "DeleteReceipt"
+	if err := s.receiptRepo.Delete(ctx, id); err != nil {
+		return svcErr(op, err)
+	}
+	s.auditRepo.Log(ctx, &domain.ExpenseAuditLog{
+		ID: uuid.New(), CompanyID: companyID,
+		Action: "receipt.deleted", EntityType: "expense_receipt", EntityID: id, CreatedAt: time.Now(),
 	})
 	return nil
 }

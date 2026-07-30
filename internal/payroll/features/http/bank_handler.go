@@ -13,7 +13,7 @@ func (h *Handler) CreateBatch(c *gin.Context) {
 	if !bindJSON(c, &req) {
 		return
 	}
-	b, err := h.BankSvc.CreateBatch(c.Request.Context(), companyID(c), userID(c), &req)
+	b, err := h.BankSvc.CreateBatch(c.Request.Context(), companyID(c), req.RunID, req.BankCode, req.PaymentType, req.PaymentDate, userID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -22,7 +22,7 @@ func (h *Handler) CreateBatch(c *gin.Context) {
 }
 
 func (h *Handler) ListBatches(c *gin.Context) {
-	list, err := h.BankSvc.ListBatches(c.Request.Context(), companyID(c), uuidPtr(qs(c, "run_id")), uuidPtr(qs(c, "status")))
+	list, err := h.BankSvc.ListBatches(c.Request.Context(), companyID(c), uuidPtr(qs(c, "run_id")), c.Query("status"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -72,12 +72,11 @@ func (h *Handler) GenerateBankFile(c *gin.Context) {
 	if !bindJSON(c, &req) {
 		return
 	}
-	b, err := h.BankSvc.GenerateBankFile(c.Request.Context(), companyID(c), id, req.Format, userID(c))
-	if err != nil {
+	if err := h.BankSvc.GenerateBankFile(c.Request.Context(), id, req.Format); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	success(c, b)
+	success(c, gin.H{"message": "file generated"})
 }
 
 func (h *Handler) SendBatch(c *gin.Context) {
@@ -86,7 +85,7 @@ func (h *Handler) SendBatch(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if err := h.BankSvc.SendBatch(c.Request.Context(), companyID(c), id); err != nil {
+	if err := h.BankSvc.SendBatch(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

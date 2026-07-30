@@ -9,7 +9,7 @@ import (
 func (h *Handler) MyApplications(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
 	userID := tenant.GetUserID(c)
-	data, err := h.ApplicationSvc.ListByUser(c.Request.Context(), companyID, userID)
+	data, err := h.ApplicationSvc.List(c.Request.Context(), companyID, userID, "", "")
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -19,8 +19,7 @@ func (h *Handler) MyApplications(c *gin.Context) {
 
 func (h *Handler) MyReferrals(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	userID := tenant.GetUserID(c)
-	data, err := h.ApplicationSvc.ListReferralsByUser(c.Request.Context(), companyID, userID)
+	data, err := h.ApplicationSvc.List(c.Request.Context(), companyID, "", "", "")
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -30,13 +29,15 @@ func (h *Handler) MyReferrals(c *gin.Context) {
 
 func (h *Handler) CreateReferral(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	userID := tenant.GetUserID(c)
-	var req map[string]any
+	var req struct {
+		CandidateID string `json:"candidate_id"`
+		PostingID   string `json:"posting_id"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.ApplicationSvc.CreateReferral(c.Request.Context(), companyID, userID, req)
+	data, err := h.ApplicationSvc.Create(c.Request.Context(), companyID, req.CandidateID, req.PostingID)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -46,8 +47,7 @@ func (h *Handler) CreateReferral(c *gin.Context) {
 
 func (h *Handler) MyInterviews(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	userID := tenant.GetUserID(c)
-	data, err := h.InterviewSvc.ListByUser(c.Request.Context(), companyID, userID)
+	data, err := h.InterviewSvc.List(c.Request.Context(), companyID, "", "")
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return

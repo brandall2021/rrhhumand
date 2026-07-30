@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
@@ -9,12 +11,12 @@ import (
 func (h *Handler) CreateRequisition(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
 	userID := tenant.GetUserID(c)
-	var req map[string]any
+	var req application.CreateRequisitionReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.RequisitionSvc.Create(c.Request.Context(), companyID, userID, req)
+	data, err := h.RequisitionSvc.Create(c.Request.Context(), companyID, userID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -24,7 +26,7 @@ func (h *Handler) CreateRequisition(c *gin.Context) {
 
 func (h *Handler) ListRequisitions(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.RequisitionSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.RequisitionSvc.List(c.Request.Context(), companyID, c.Query("status"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -44,12 +46,12 @@ func (h *Handler) GetRequisition(c *gin.Context) {
 
 func (h *Handler) UpdateRequisition(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Requisition
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.RequisitionSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.RequisitionSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -86,7 +88,7 @@ func (h *Handler) OpenRequisition(c *gin.Context) {
 
 func (h *Handler) CloseRequisition(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.RequisitionSvc.Close(c.Request.Context(), companyID, c.Param("id")); err != nil {
+	if err := h.RequisitionSvc.Close(c.Request.Context(), companyID, c.Param("id"), c.Query("reason")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -114,12 +116,12 @@ func (h *Handler) ListRequisitionSkills(c *gin.Context) {
 
 func (h *Handler) AddRequisitionSkill(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.RequisitionSkill
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.RequisitionSvc.AddSkill(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.RequisitionSvc.AddSkill(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return

@@ -82,7 +82,7 @@ func (h *Handler) DeleteMappingArca(c *gin.Context) {
 }
 
 func (h *Handler) ListExportsArca(c *gin.Context) {
-	list, err := h.ArcaSvc.ListExports(c.Request.Context(), companyID(c), uuidPtr(qs(c, "run_id")))
+	list, err := h.ArcaSvc.ListExports(c.Request.Context(), companyID(c), uuidPtr(qs(c, "run_id")), qi(c, "limit", 10), qi(c, "offset", 0))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -133,7 +133,7 @@ func (h *Handler) ValidateExportArca(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	if err := h.ArcaSvc.ValidateExport(c.Request.Context(), companyID(c), id); err != nil {
+	if err := h.ArcaSvc.ValidateExport(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -96,32 +96,32 @@ func (s *OfferService) Update(ctx context.Context, companyID, id string, req *do
 
 func (s *OfferService) SubmitForApproval(ctx context.Context, companyID, id string) error {
 	const op = "SubmitOfferForApproval"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusPendingApproval)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusPendingApproval))
 }
 
 func (s *OfferService) Approve(ctx context.Context, companyID, id string) error {
 	const op = "ApproveOffer"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusApproved)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusApproved))
 }
 
 func (s *OfferService) Send(ctx context.Context, companyID, id string) error {
 	const op = "SendOffer"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusSent)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusSent))
 }
 
 func (s *OfferService) Accept(ctx context.Context, companyID, id string) error {
 	const op = "AcceptOffer"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusAccepted)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusAccepted))
 }
 
 func (s *OfferService) Reject(ctx context.Context, companyID, id string) error {
 	const op = "RejectOffer"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusRejected)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusRejected))
 }
 
 func (s *OfferService) Withdraw(ctx context.Context, companyID, id string) error {
 	const op = "WithdrawOffer"
-	return s.offerRepo.UpdateStatus(ctx, companyID, id, domain.OfferStatusWithdrawn)
+	return s.offerRepo.UpdateStatus(ctx, companyID, id, string(domain.OfferStatusWithdrawn))
 }
 
 func (s *OfferService) AddNegotiation(ctx context.Context, companyID, offerID string, neg domain.OfferNegotiation) (*domain.OfferNegotiation, error) {

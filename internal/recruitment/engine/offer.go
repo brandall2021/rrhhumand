@@ -33,13 +33,13 @@ func NewOfferEngine(offerRepo *repository.OfferRepo, applicationRepo *repository
 	}
 }
 
-func (e *OfferEngine) GenerateOfferContent(ctx context.Context, applicationID string, templateVars map[string]string) (*OfferContent, error) {
-	app, err := e.applicationRepo.GetByID(ctx, applicationID)
+func (e *OfferEngine) GenerateOfferContent(ctx context.Context, companyID, applicationID string, templateVars map[string]string) (*OfferContent, error) {
+	app, err := e.applicationRepo.GetByID(ctx, companyID, applicationID)
 	if err != nil {
 		return nil, err
 	}
 
-	candidate, err := e.candidateRepo.GetByID(ctx, app.CandidateID)
+	candidate, err := e.candidateRepo.GetByID(ctx, app.CompanyID, app.CandidateID)
 	if err != nil {
 		return nil, err
 	}

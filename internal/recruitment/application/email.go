@@ -76,6 +76,15 @@ func (s *EmailService) DeleteTemplate(ctx context.Context, companyID, id string)
 	return s.templateRepo.DeleteTemplate(ctx, companyID, id)
 }
 
+func (s *EmailService) ListEmails(ctx context.Context, companyID, applicationID string) ([]domain.EmailLog, error) {
+	const op = "ListEmails"
+	result, err := s.emailLogRepo.ListEmails(ctx, companyID, applicationID)
+	if err != nil {
+		return nil, svcErr(op, err)
+	}
+	return result, nil
+}
+
 func (s *EmailService) SendEmail(ctx context.Context, templateCode, recipient string, vars map[string]string) error {
 	const op = "SendEmail"
 	tpl, err := s.templateRepo.GetTemplateByCode(ctx, "", templateCode)

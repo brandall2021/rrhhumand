@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rrhhumand/api/internal/benefits/domain"
-	"github.com/shopspring/decimal"
 )
 
 type BenefitRepo struct {
@@ -36,7 +35,7 @@ func (r *BenefitRepo) Create(ctx context.Context, b *domain.Benefit) error {
 	return repoErr("Create", err)
 }
 
-func scanBenefit(row pgx.CollectableRow) (domain.Benefit, error) {
+func scanBenefit(row pgx.Row) (domain.Benefit, error) {
 	var b domain.Benefit
 	err := row.Scan(&b.ID, &b.CompanyID, &b.TypeID, &b.ProviderID, &b.Code, &b.Name, &b.Description, &b.ShortDescription,
 		&b.CoverageDetails, &b.EligibilitySummary, &b.LogoURL, &b.BannerURL, &b.WebsiteURL, &b.TermsURL, &b.DocumentationURL,
@@ -103,7 +102,21 @@ func (r *BenefitRepo) List(ctx context.Context, companyID uuid.UUID, status, typ
 		return nil, repoErr("List", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanBenefit)
+	var result []domain.Benefit
+	for rows.Next() {
+		var b domain.Benefit
+		err := rows.Scan(&b.ID, &b.CompanyID, &b.TypeID, &b.ProviderID, &b.Code, &b.Name, &b.Description, &b.ShortDescription,
+			&b.CoverageDetails, &b.EligibilitySummary, &b.LogoURL, &b.BannerURL, &b.WebsiteURL, &b.TermsURL, &b.DocumentationURL,
+			&b.ProviderReference, &b.StartDate, &b.EndDate, &b.MaxBeneficiaries, &b.CurrentBeneficiaries, &b.WaitingPeriodDays,
+			&b.MinimumServiceMonths, &b.DeductibleAmount, &b.DeductiblePeriod, &b.CopayPercentage, &b.MaxCoverageAmount,
+			&b.MaxCoveragePeriod, &b.AutoEnroll, &b.EnrollmentDeadlineDays, &b.RequiresEvidence, &b.EvidenceDescription,
+			&b.Status, &b.Visibility, &b.SortOrder, &b.Metadata, &b.CreatedBy, &b.CreatedAt, &b.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("List", err)
+		}
+		result = append(result, b)
+	}
+	return result, nil
 }
 
 func (r *BenefitRepo) Update(ctx context.Context, b *domain.Benefit) error {
@@ -149,5 +162,19 @@ func (r *BenefitRepo) SearchBenefits(ctx context.Context, companyID uuid.UUID, q
 		return nil, repoErr("SearchBenefits", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanBenefit)
+	var result []domain.Benefit
+	for rows.Next() {
+		var b domain.Benefit
+		err := rows.Scan(&b.ID, &b.CompanyID, &b.TypeID, &b.ProviderID, &b.Code, &b.Name, &b.Description, &b.ShortDescription,
+			&b.CoverageDetails, &b.EligibilitySummary, &b.LogoURL, &b.BannerURL, &b.WebsiteURL, &b.TermsURL, &b.DocumentationURL,
+			&b.ProviderReference, &b.StartDate, &b.EndDate, &b.MaxBeneficiaries, &b.CurrentBeneficiaries, &b.WaitingPeriodDays,
+			&b.MinimumServiceMonths, &b.DeductibleAmount, &b.DeductiblePeriod, &b.CopayPercentage, &b.MaxCoverageAmount,
+			&b.MaxCoveragePeriod, &b.AutoEnroll, &b.EnrollmentDeadlineDays, &b.RequiresEvidence, &b.EvidenceDescription,
+			&b.Status, &b.Visibility, &b.SortOrder, &b.Metadata, &b.CreatedBy, &b.CreatedAt, &b.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("SearchBenefits", err)
+		}
+		result = append(result, b)
+	}
+	return result, nil
 }

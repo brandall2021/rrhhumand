@@ -59,7 +59,7 @@ func (s *PostingService) Create(ctx context.Context, companyID string, req *Crea
 		SalaryMax:        req.SalaryMax,
 		Currency:         req.Currency,
 		IsPublic:         req.IsPublic,
-		ClosedAt:         req.ClosingAt,
+		ClosingAt:         req.ClosingAt,
 		Status:           domain.PostStatusDraft,
 		CreatedAt:        now,
 		UpdatedAt:        now,
@@ -93,12 +93,12 @@ func (s *PostingService) Update(ctx context.Context, companyID, id string, req *
 
 func (s *PostingService) Publish(ctx context.Context, companyID, id string) error {
 	const op = "PublishPosting"
-	return s.postingRepo.UpdateStatus(ctx, companyID, id, domain.PostStatusPublished)
+	return s.postingRepo.UpdateStatus(ctx, companyID, id, string(domain.PostStatusPublished))
 }
 
 func (s *PostingService) Close(ctx context.Context, companyID, id string) error {
 	const op = "ClosePosting"
-	return s.postingRepo.UpdateStatus(ctx, companyID, id, domain.PostStatusClosed)
+	return s.postingRepo.UpdateStatus(ctx, companyID, id, string(domain.PostStatusClosed))
 }
 
 func (s *PostingService) AddScreeningQuestion(ctx context.Context, companyID, postingID string, q domain.PostingScreeningQuestion) (*domain.PostingScreeningQuestion, error) {
@@ -128,4 +128,21 @@ func (s *PostingService) DeleteScreeningQuestion(ctx context.Context, companyID,
 func (s *PostingService) ListScreeningQuestions(ctx context.Context, companyID, postingID string) ([]domain.PostingScreeningQuestion, error) {
 	const op = "ListScreeningQuestions"
 	return s.postingRepo.ListScreeningQuestions(ctx, postingID)
+}
+
+func (s *PostingService) ListPublic(ctx context.Context) ([]domain.Posting, error) {
+	const op = "ListPublicPostings"
+	return s.postingRepo.ListPublic(ctx)
+}
+
+func (s *PostingService) GetPublicByID(ctx context.Context, id string) (*domain.Posting, error) {
+	const op = "GetPublicPosting"
+	return s.postingRepo.GetPublicByID(ctx, id)
+}
+
+type PublicApplyReq struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone,omitempty"`
 }

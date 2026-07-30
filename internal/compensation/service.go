@@ -254,9 +254,9 @@ func (s *Service) SetEmployeeCompensation(ctx context.Context, companyID, employ
 		cur.Status = "inactive"
 		_ = s.repo.UpdateEmployeeCompensation(ctx, cur)
 	}
-	cur = req.Currency
-	if cur == "" {
-		cur = "USD"
+	currency := req.Currency
+	if currency == "" {
+		currency = "USD"
 	}
 	freq := req.PayFrequency
 	if freq == "" {
@@ -268,7 +268,7 @@ func (s *Service) SetEmployeeCompensation(ctx context.Context, companyID, employ
 		EmployeeID:    employeeID,
 		SalaryBandID:  req.SalaryBandID,
 		BaseAmount:    decimal.NewFromFloat(req.BaseAmount),
-		Currency:      cur,
+		Currency:      currency,
 		PayFrequency:  freq,
 		EffectiveFrom: req.EffectiveFrom,
 		Status:        "active",
@@ -278,7 +278,7 @@ func (s *Service) SetEmployeeCompensation(ctx context.Context, companyID, employ
 		return nil, svcErr("SetEmployeeCompensation", err)
 	}
 	// Record history
-	s.recordHistory(ctx, companyID, employeeID, nil, ec.BaseAmount, cur, "other", ec.EffectiveFrom, &userID, userID)
+	s.recordHistory(ctx, companyID, employeeID, nil, ec.BaseAmount, currency, "other", ec.EffectiveFrom, &userID, userID)
 	s.emitEvent(ctx, companyID, "compensation.created", "employee_compensation", ec.ID, userID)
 	return ec, nil
 }
@@ -1085,8 +1085,8 @@ func (s *Service) AnalyzeEquity(ctx context.Context, companyID string, req Equit
 			Label:         label,
 			EmployeeCount: len(salaries),
 		}
-		min := decimal.Max()
-		max := decimal.Min()
+		min := salaries[0]
+		max := salaries[0]
 		sum := decimal.Zero
 		for _, s := range salaries {
 			if s.LessThan(min) {

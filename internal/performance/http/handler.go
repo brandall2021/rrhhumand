@@ -582,7 +582,7 @@ func (h *Handler) ListObjectives(c *gin.Context) {
 		EmployeeID: c.Query("employee_id"),
 		Status:     domain.ObjectiveStatus(c.Query("status")),
 	}
-	objectives, err := h.objectives.List(c.Request.Context(), filter)
+	objectives, err := 	h.objectiveRepo.List(c.Request.Context(), filter)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -592,7 +592,7 @@ func (h *Handler) ListObjectives(c *gin.Context) {
 
 func (h *Handler) GetObjective(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	o, err := h.objectives.GetByID(c.Request.Context(), companyID, c.Param("id"))
+	o, err := 	h.objectiveRepo.GetByID(c.Request.Context(), companyID, c.Param("id"))
 	if err != nil {
 		response.NotFound(c, "Objetivo no encontrado")
 		return
@@ -609,7 +609,7 @@ func (h *Handler) UpdateObjective(c *gin.Context) {
 		response.BadRequest(c, "Solicitud inválida")
 		return
 	}
-	o, err := h.objectives.GetByID(c.Request.Context(), companyID, c.Param("id"))
+	o, err := h.objectiveRepo.GetByID(c.Request.Context(), companyID, c.Param("id"))
 	if err != nil {
 		response.NotFound(c, "Objetivo no encontrado")
 		return
@@ -632,7 +632,7 @@ func (h *Handler) UpdateObjective(c *gin.Context) {
 
 func (h *Handler) DeleteObjective(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	o, err := h.objectives.GetByID(c.Request.Context(), companyID, c.Param("id"))
+	o, err := h.objectiveRepo.GetByID(c.Request.Context(), companyID, c.Param("id"))
 	if err != nil {
 		response.NotFound(c, "Objetivo no encontrado")
 		return

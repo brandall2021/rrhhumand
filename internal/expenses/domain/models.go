@@ -57,6 +57,8 @@ type Expense struct {
 	ExchangeRate       decimal.Decimal `json:"exchange_rate"`
 	BaseAmount         decimal.Decimal `json:"base_amount"`
 	BaseCurrency       string          `json:"base_currency"`
+	TaxAmount          decimal.Decimal `json:"tax_amount"`
+	TotalAmount        decimal.Decimal `json:"total_amount"`
 	PaymentMethodID    *uuid.UUID      `json:"payment_method_id,omitempty"`
 	PaymentMethodOther *string         `json:"payment_method_other,omitempty"`
 	MerchantName       *string         `json:"merchant_name,omitempty"`
@@ -72,7 +74,10 @@ type Expense struct {
 	Observation        *string         `json:"observation,omitempty"`
 	CostCenterID       *uuid.UUID      `json:"cost_center_id,omitempty"`
 	ProjectID          *uuid.UUID      `json:"project_id,omitempty"`
-	ReceiptMissingReason *string       `json:"receipt_missing_reason,omitempty"`
+	ReceiptRequired      bool            `json:"receipt_required"`
+	IsBillable           bool            `json:"is_billable"`
+	BillableClient       *string         `json:"billable_client,omitempty"`
+	ReceiptMissingReason *string         `json:"receipt_missing_reason,omitempty"`
 	IdempotencyKey     *string         `json:"idempotency_key,omitempty"`
 	CreatedBy          uuid.UUID       `json:"created_by"`
 	CreatedAt          time.Time       `json:"created_at"`

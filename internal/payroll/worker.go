@@ -52,7 +52,7 @@ func (w *Worker) run(interval time.Duration) {
 }
 
 func (w *Worker) checkPendingRuns() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Future: process queue-based calculation jobs
@@ -61,7 +61,7 @@ func (w *Worker) checkPendingRuns() {
 }
 
 func (w *Worker) checkOpenPeriods() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Future: auto-close periods past end_date without activity

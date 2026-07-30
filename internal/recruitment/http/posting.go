@@ -2,18 +2,20 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreatePosting(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req application.CreatePostingReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.PostingSvc.Create(c.Request.Context(), companyID, req)
+	data, err := h.PostingSvc.Create(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -23,7 +25,7 @@ func (h *Handler) CreatePosting(c *gin.Context) {
 
 func (h *Handler) ListPostings(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.PostingSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.PostingSvc.List(c.Request.Context(), companyID, c.Query("status"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -43,12 +45,12 @@ func (h *Handler) GetPosting(c *gin.Context) {
 
 func (h *Handler) UpdatePosting(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Posting
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.PostingSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.PostingSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -86,7 +88,7 @@ func (h *Handler) ListScreeningQuestions(c *gin.Context) {
 
 func (h *Handler) AddScreeningQuestion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.PostingScreeningQuestion
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -101,22 +103,22 @@ func (h *Handler) AddScreeningQuestion(c *gin.Context) {
 
 func (h *Handler) UpdateScreeningQuestion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.PostingScreeningQuestion
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.PostingSvc.UpdateScreeningQuestion(c.Request.Context(), companyID, c.Param("questionId"), req)
+	err := h.PostingSvc.UpdateScreeningQuestion(c.Request.Context(), companyID, c.Param("id"), c.Param("questionId"), req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "question updated"})
 }
 
 func (h *Handler) DeleteScreeningQuestion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.PostingSvc.DeleteScreeningQuestion(c.Request.Context(), companyID, c.Param("questionId")); err != nil {
+	if err := h.PostingSvc.DeleteScreeningQuestion(c.Request.Context(), companyID, c.Query("posting_id"), c.Param("questionId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

@@ -13,7 +13,8 @@ func (h *Handler) MyBenefits(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	benefits, err := h.AssignmentSvc.ListEmployeeBenefits(c.Request.Context(), &companyID(c), &empID, nil, nil)
+	cid := companyID(c)
+	benefits, err := h.AssignmentSvc.ListEmployeeBenefits(c.Request.Context(), &cid, &empID, nil, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

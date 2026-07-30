@@ -9,7 +9,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/rrhhumand/api/internal/payroll/domain"
-	"github.com/rrhhumand/api/internal/payroll/repository"
 )
 
 type CreateNoveltyInput struct {
@@ -113,15 +112,7 @@ func (s *PayrollService) ListNovelties(ctx context.Context, companyID string, em
 	if limit <= 0 {
 		limit = 20
 	}
-	novelties, err := s.repo.ListNovelties(ctx, companyID, repository.NoveltyFilter{
-		EmployeeID:  employeeID,
-		PeriodID:    periodID,
-		NoveltyType: noveltyType,
-		Status:      status,
-		Source:      source,
-		Limit:       limit,
-		Offset:      offset,
-	})
+	novelties, err := s.repo.ListNovelties(ctx, companyID, employeeID, periodID, noveltyType, status, source, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list novelties: %w", err)
 	}

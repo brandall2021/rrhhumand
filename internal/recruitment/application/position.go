@@ -91,7 +91,7 @@ func (s *PositionService) Update(ctx context.Context, companyID, id string, req 
 
 func (s *PositionService) Close(ctx context.Context, companyID, id string) error {
 	const op = "ClosePosition"
-	return s.positionRepo.UpdateStatus(ctx, companyID, id, domain.PosStatusFilled)
+	return s.positionRepo.UpdateStatus(ctx, companyID, id, string(domain.PosStatusFilled))
 }
 
 func (s *PositionService) AddSkill(ctx context.Context, companyID, positionID string, skill domain.PositionSkill) (*domain.PositionSkill, error) {
@@ -108,4 +108,9 @@ func (s *PositionService) AddSkill(ctx context.Context, companyID, positionID st
 func (s *PositionService) RemoveSkill(ctx context.Context, companyID, positionID, skillID string) error {
 	const op = "RemovePositionSkill"
 	return s.positionRepo.RemoveSkill(ctx, skillID)
+}
+
+func (s *PositionService) GetSkills(ctx context.Context, companyID, positionID string) ([]domain.PositionSkill, error) {
+	const op = "GetPositionSkills"
+	return s.positionRepo.ListSkills(ctx, positionID)
 }

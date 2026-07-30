@@ -19,7 +19,7 @@ func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 
 // ----- Cycles -----
 
-func (r *PostgresRepository) CreateCycle(ctx context.Context, c *domain.PerformanceCycle) error {
+func (r *PostgresRepository) Create(ctx context.Context, c *domain.PerformanceCycle) error {
 	now := time.Now()
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO performance_cycles (company_id, name, description, cycle_type, status, start_date, end_date,
@@ -35,7 +35,7 @@ func (r *PostgresRepository) CreateCycle(ctx context.Context, c *domain.Performa
 	).Scan(&c.ID)
 }
 
-func (r *PostgresRepository) GetCycleByID(ctx context.Context, companyID, id string) (*domain.PerformanceCycle, error) {
+func (r *PostgresRepository) GetByID(ctx context.Context, companyID, id string) (*domain.PerformanceCycle, error) {
 	c := &domain.PerformanceCycle{}
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, company_id, name, description, cycle_type, status, start_date, end_date,
@@ -53,7 +53,7 @@ func (r *PostgresRepository) GetCycleByID(ctx context.Context, companyID, id str
 	return c, nil
 }
 
-func (r *PostgresRepository) ListCycles(ctx context.Context, filter domain.PerformanceCycleFilter) ([]domain.PerformanceCycle, error) {
+func (r *PostgresRepository) List(ctx context.Context, filter domain.PerformanceCycleFilter) ([]domain.PerformanceCycle, error) {
 	query := `SELECT id, company_id, name, description, cycle_type, status, start_date, end_date,
 		 evaluation_start_date, evaluation_end_date, review_start_date, review_end_date,
 		 calibration_start_date, calibration_end_date, template_id, objective_weight, competency_weight,
@@ -95,7 +95,7 @@ func (r *PostgresRepository) ListCycles(ctx context.Context, filter domain.Perfo
 	return cycles, nil
 }
 
-func (r *PostgresRepository) UpdateCycle(ctx context.Context, c *domain.PerformanceCycle) error {
+func (r *PostgresRepository) Update(ctx context.Context, c *domain.PerformanceCycle) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE performance_cycles SET name=$3, description=$4, cycle_type=$5, start_date=$6, end_date=$7,
 		 evaluation_start_date=$8, evaluation_end_date=$9, review_start_date=$10, review_end_date=$11,
@@ -109,14 +109,14 @@ func (r *PostgresRepository) UpdateCycle(ctx context.Context, c *domain.Performa
 	return err
 }
 
-func (r *PostgresRepository) UpdateCycleStatus(ctx context.Context, companyID, id string, status domain.CycleStatus) error {
+func (r *PostgresRepository) UpdateStatus(ctx context.Context, companyID, id string, status domain.CycleStatus) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE performance_cycles SET status=$3, updated_at=NOW() WHERE company_id=$1 AND id=$2`,
 		companyID, id, status)
 	return err
 }
 
-func (r *PostgresRepository) DeleteCycle(ctx context.Context, companyID, id string) error {
+func (r *PostgresRepository) Delete(ctx context.Context, companyID, id string) error {
 	_, err := r.pool.Exec(ctx, `DELETE FROM performance_cycles WHERE company_id=$1 AND id=$2`, companyID, id)
 	return err
 }

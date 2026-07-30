@@ -132,10 +132,10 @@ func (s *HiringService) LinkOnboarding(ctx context.Context, companyID, processID
 
 func (s *HiringService) Complete(ctx context.Context, companyID, id string) error {
 	const op = "CompleteHiringProcess"
-	return s.hiringProcessRepo.UpdateStatus(ctx, companyID, id, domain.HireStatusCompleted)
+	return s.hiringProcessRepo.UpdateStatus(ctx, companyID, id, string(domain.HireStatusCompleted))
 }
 
 func (s *HiringService) Cancel(ctx context.Context, companyID, id string) error {
 	const op = "CancelHiringProcess"
-	return s.hiringProcessRepo.UpdateStatus(ctx, companyID, id, domain.HireStatusCancelled)
+	return s.hiringProcessRepo.UpdateStatus(ctx, companyID, id, string(domain.HireStatusCancelled))
 }

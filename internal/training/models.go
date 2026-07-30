@@ -1,7 +1,6 @@
 package training
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -33,6 +32,8 @@ type Course struct {
 	CertificateEnabled     bool       `json:"certificate_enabled"`
 	MinAttendancePercentage float64   `json:"min_attendance_percentage"`
 	CreatedBy              string     `json:"created_by"`
+	PublishedBy            *string    `json:"published_by,omitempty"`
+	PublishedAt            *time.Time `json:"published_at,omitempty"`
 	CreatedAt              time.Time  `json:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at"`
 }
@@ -43,24 +44,28 @@ type CourseVersion struct {
 	Version     string     `json:"version"`
 	Description *string    `json:"description,omitempty"`
 	Status      string     `json:"status"`
+	IsPublished bool       `json:"is_published"`
+	CreatedBy   *string    `json:"created_by,omitempty"`
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
 type CourseContent struct {
-	ID              string    `json:"id"`
-	CourseVersionID string    `json:"course_version_id"`
-	Title           string    `json:"title"`
-	Description     *string   `json:"description,omitempty"`
-	ContentType     string    `json:"content_type"`
-	StorageProvider *string   `json:"storage_provider,omitempty"`
-	StorageKey      *string   `json:"storage_key,omitempty"`
-	ExternalURL     *string   `json:"external_url,omitempty"`
-	DurationSeconds int       `json:"duration_seconds"`
-	SortOrder       int       `json:"sort_order"`
-	Required        bool      `json:"required"`
-	Published       bool      `json:"published"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID              string     `json:"id"`
+	CourseVersionID string     `json:"course_version_id"`
+	Title           string     `json:"title"`
+	Description     *string    `json:"description,omitempty"`
+	ContentType     string     `json:"content_type"`
+	StorageProvider *string    `json:"storage_provider,omitempty"`
+	StorageKey      *string    `json:"storage_key,omitempty"`
+	ExternalURL     *string    `json:"external_url,omitempty"`
+	DurationSeconds int        `json:"duration_seconds"`
+	SortOrder       int        `json:"sort_order"`
+	Required        bool       `json:"required"`
+	Published       bool       `json:"published"`
+	CreatedBy       *string    `json:"created_by,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
 }
 
 type CoursePrerequisite struct {
@@ -71,31 +76,38 @@ type CoursePrerequisite struct {
 }
 
 type Instructor struct {
-	ID              string    `json:"id"`
-	CompanyID       string    `json:"company_id"`
-	EmployeeID      *string   `json:"employee_id,omitempty"`
-	InstructorType  string    `json:"instructor_type"`
-	Name            string    `json:"name"`
-	Email           *string   `json:"email,omitempty"`
-	Phone           *string   `json:"phone,omitempty"`
-	Specialization  *string   `json:"specialization,omitempty"`
-	Bio             *string   `json:"bio,omitempty"`
-	Status          string    `json:"status"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID              string     `json:"id"`
+	CompanyID       string     `json:"company_id"`
+	EmployeeID      *string    `json:"employee_id,omitempty"`
+	InstructorType  string     `json:"instructor_type"`
+	Name            string     `json:"name"`
+	Email           *string    `json:"email,omitempty"`
+	Phone           *string    `json:"phone,omitempty"`
+	Specialization  *string    `json:"specialization,omitempty"`
+	Bio             *string    `json:"bio,omitempty"`
+	Status          string     `json:"status"`
+	Active          bool       `json:"active"`
+	Rating          float64    `json:"rating"`
+	CreatedBy       *string    `json:"created_by,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 type TrainingProvider struct {
-	ID          string    `json:"id"`
-	CompanyID   string    `json:"company_id"`
-	Name        string    `json:"name"`
-	TaxID       *string   `json:"tax_id,omitempty"`
-	Email       *string   `json:"email,omitempty"`
-	Phone       *string   `json:"phone,omitempty"`
-	Website     *string   `json:"website,omitempty"`
-	ContactName *string   `json:"contact_name,omitempty"`
-	Status      string    `json:"status"`
-	Notes       *string   `json:"notes,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string     `json:"id"`
+	CompanyID   string     `json:"company_id"`
+	Name        string     `json:"name"`
+	TaxID       *string    `json:"tax_id,omitempty"`
+	Email       *string    `json:"email,omitempty"`
+	Phone       *string    `json:"phone,omitempty"`
+	Website     *string    `json:"website,omitempty"`
+	ContactName *string    `json:"contact_name,omitempty"`
+	Status      string     `json:"status"`
+	Notes       *string    `json:"notes,omitempty"`
+	Active      bool       `json:"active"`
+	CreatedBy   *string    `json:"created_by,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 type CourseOffering struct {
@@ -118,6 +130,7 @@ type CourseOffering struct {
 	CostAmount      *float64   `json:"cost_amount,omitempty"`
 	CostCurrency    string     `json:"cost_currency"`
 	Status          string     `json:"status"`
+	CreatedBy       *string    `json:"created_by,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
@@ -147,9 +160,13 @@ type Enrollment struct {
 	CompletedAt    *time.Time `json:"completed_at,omitempty"`
 	DroppedAt      *time.Time `json:"dropped_at,omitempty"`
 	FinalScore     *float64   `json:"final_score,omitempty"`
-	Passed         *bool      `json:"passed,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	Passed              *bool     `json:"passed,omitempty"`
+	ProgressPercentage  float64    `json:"progress_percentage"`
+	CertificateURL      *string    `json:"certificate_url,omitempty"`
+	CertificateIssuedAt *time.Time `json:"certificate_issued_at,omitempty"`
+	CreatedBy           *string    `json:"created_by,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
 type TrainingAssignment struct {
@@ -192,19 +209,22 @@ type CourseProgress struct {
 }
 
 type Assessment struct {
-	ID                string    `json:"id"`
-	CourseID          string    `json:"course_id"`
-	Title             string    `json:"title"`
-	Description       *string   `json:"description,omitempty"`
-	AssessmentType    string    `json:"assessment_type"`
-	AttemptsAllowed   int       `json:"attempts_allowed"`
-	PassingScore      *float64  `json:"passing_score,omitempty"`
-	TimeLimitMinutes  *int      `json:"time_limit_minutes,omitempty"`
-	RandomizeQuestions bool     `json:"randomize_questions"`
-	ShowResults       bool      `json:"show_results"`
-	Status            string    `json:"status"`
-	SortOrder         int       `json:"sort_order"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID                 string     `json:"id"`
+	CompanyID          string     `json:"company_id"`
+	CourseID           string     `json:"course_id"`
+	Title              string     `json:"title"`
+	Description        *string    `json:"description,omitempty"`
+	AssessmentType     string     `json:"assessment_type"`
+	AttemptsAllowed    int        `json:"attempts_allowed"`
+	PassingScore       *float64   `json:"passing_score,omitempty"`
+	TimeLimitMinutes   *int       `json:"time_limit_minutes,omitempty"`
+	RandomizeQuestions bool       `json:"randomize_questions"`
+	ShowResults        bool       `json:"show_results"`
+	Status             string     `json:"status"`
+	SortOrder          int        `json:"sort_order"`
+	CreatedBy          *string    `json:"created_by,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 type AssessmentQuestion struct {
@@ -266,28 +286,35 @@ type Certificate struct {
 }
 
 type Competency struct {
-	ID             string    `json:"id"`
-	CompanyID      string    `json:"company_id"`
-	Name           string    `json:"name"`
-	Description    *string   `json:"description,omitempty"`
-	CompetencyType string    `json:"competency_type"`
-	Active         bool      `json:"active"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID             string             `json:"id"`
+	CompanyID      string             `json:"company_id"`
+	Name           string             `json:"name"`
+	Description    *string            `json:"description,omitempty"`
+	CompetencyType string             `json:"competency_type"`
+	Active         bool               `json:"active"`
+	Levels         []CompetencyLevel  `json:"levels,omitempty"`
+	CreatedBy      *string            `json:"created_by,omitempty"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
 }
 
 type CompetencyLevel struct {
-	ID           string  `json:"id"`
-	CompetencyID string  `json:"competency_id"`
-	Level        int     `json:"level"`
-	Label        string  `json:"label"`
-	Description  *string `json:"description,omitempty"`
+	ID           string     `json:"id"`
+	CompetencyID string     `json:"competency_id"`
+	Level        int        `json:"level"`
+	Label        string     `json:"label"`
+	Description  *string    `json:"description,omitempty"`
+	CreatedBy    *string    `json:"created_by,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
 }
 
 type CourseCompetency struct {
-	ID            string `json:"id"`
-	CourseID      string `json:"course_id"`
-	CompetencyID  string `json:"competency_id"`
-	AcquiredLevel int    `json:"acquired_level"`
+	ID            string  `json:"id"`
+	CourseID      string  `json:"course_id"`
+	CompetencyID  string  `json:"competency_id"`
+	AcquiredLevel int     `json:"acquired_level"`
+	ExpectedLevel int     `json:"expected_level"`
+	Weight        float64 `json:"weight"`
 }
 
 type EmployeeCompetency struct {
@@ -320,18 +347,19 @@ type CompetencyGap struct {
 }
 
 type TrainingNeed struct {
-	ID           string    `json:"id"`
-	CompanyID    string    `json:"company_id"`
-	EmployeeID   *string   `json:"employee_id,omitempty"`
-	CompetencyID *string   `json:"competency_id,omitempty"`
-	Title        string    `json:"title"`
-	Description  *string   `json:"description,omitempty"`
-	Priority     string    `json:"priority"`
-	Source       *string   `json:"source,omitempty"`
-	SourceID     *string   `json:"source_id,omitempty"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           string     `json:"id"`
+	CompanyID    string     `json:"company_id"`
+	EmployeeID   *string    `json:"employee_id,omitempty"`
+	CompetencyID *string    `json:"competency_id,omitempty"`
+	Title        string     `json:"title"`
+	Description  *string    `json:"description,omitempty"`
+	Priority     string     `json:"priority"`
+	Source       *string    `json:"source,omitempty"`
+	SourceID     *string    `json:"source_id,omitempty"`
+	Status       string     `json:"status"`
+	CreatedBy    *string    `json:"created_by,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type TrainingPlan struct {
@@ -390,6 +418,19 @@ type LearningPathEnrollment struct {
 	StartedAt          *time.Time `json:"started_at,omitempty"`
 	CompletedAt        *time.Time `json:"completed_at,omitempty"`
 	CreatedAt          time.Time  `json:"created_at"`
+}
+
+type Attendance struct {
+	ID           string     `json:"id"`
+	EnrollmentID string     `json:"enrollment_id"`
+	SessionID    string     `json:"session_id"`
+	Status       string     `json:"status"`
+	CheckIn      *string    `json:"check_in,omitempty"`
+	CheckOut     *string    `json:"check_out,omitempty"`
+	Notes        *string    `json:"notes,omitempty"`
+	CreatedBy    string     `json:"created_by"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type TrainingAttendance struct {
@@ -464,10 +505,125 @@ type EmployeeTrainingDashboard struct {
 	Competencies   int     `json:"competencies"`
 }
 
-type CourseFilter struct {
-	Status     string
-	CategoryID string
-	Modality   string
-	Difficulty string
-	Search     string
+type Category struct {
+	ID          string     `json:"id"`
+	CompanyID   string     `json:"company_id"`
+	ParentID    *string    `json:"parent_id,omitempty"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description,omitempty"`
+	Active      bool       `json:"active"`
+	CreatedBy   string     `json:"created_by"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+type OfferingSession struct {
+	ID           string    `json:"id"`
+	OfferingID   string    `json:"offering_id"`
+	Title        *string   `json:"title,omitempty"`
+	SessionDate  time.Time `json:"session_date"`
+	StartTime    *string   `json:"start_time,omitempty"`
+	EndTime      *string   `json:"end_time,omitempty"`
+	Location     *string   `json:"location,omitempty"`
+	MeetingURL   *string   `json:"meeting_url,omitempty"`
+	InstructorID *string   `json:"instructor_id,omitempty"`
+	CreatedBy    string    `json:"created_by"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type Attempt struct {
+	ID            string     `json:"id"`
+	EnrollmentID  string     `json:"enrollment_id"`
+	AssessmentID  string     `json:"assessment_id"`
+	AttemptNumber int        `json:"attempt_number"`
+	Score         *float64   `json:"score,omitempty"`
+	TotalPoints   *float64   `json:"total_points,omitempty"`
+	Status        string     `json:"status"`
+	StartedAt     *string    `json:"started_at,omitempty"`
+	CompletedAt   *string    `json:"completed_at,omitempty"`
+}
+
+type Answer struct {
+	ID              string   `json:"id"`
+	AttemptID       string   `json:"attempt_id"`
+	QuestionID      string   `json:"question_id"`
+	SelectedOptionID *string  `json:"selected_option_id,omitempty"`
+	TextAnswer      *string  `json:"text_answer,omitempty"`
+	NumericAnswer   *float64 `json:"numeric_answer,omitempty"`
+	IsCorrect       *bool    `json:"is_correct,omitempty"`
+	PointsEarned    *float64 `json:"points_earned,omitempty"`
+}
+
+type Assignment struct {
+	ID             string     `json:"id"`
+	CompanyID      string     `json:"company_id"`
+	CourseID       string     `json:"course_id"`
+	OfferingID     string     `json:"offering_id"`
+	AssigneeType   string     `json:"assignee_type"`
+	AssigneeID     *string    `json:"assignee_id,omitempty"`
+	AssignmentType string     `json:"assignment_type"`
+	DueDate        *time.Time `json:"due_date,omitempty"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
+type AssignmentRule struct {
+	ID             string     `json:"id"`
+	CompanyID      string     `json:"company_id"`
+	Name           string     `json:"name"`
+	CriteriaField  string     `json:"criteria_field"`
+	CriteriaValue  string     `json:"criteria_value"`
+	CourseID       string     `json:"course_id"`
+	AssignmentType string     `json:"assignment_type"`
+	Active         bool       `json:"active"`
+	LastRunAt      *time.Time `json:"last_run_at,omitempty"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+type Question struct {
+	ID           string           `json:"id"`
+	AssessmentID string           `json:"assessment_id"`
+	Question     string           `json:"question"`
+	QuestionType string           `json:"question_type"`
+	Points       float64          `json:"points"`
+	SortOrder    int              `json:"sort_order"`
+	Options      []QuestionOption `json:"options,omitempty"`
+	CreatedAt    time.Time        `json:"created_at"`
+	UpdatedAt    time.Time        `json:"updated_at"`
+}
+
+type QuestionOption struct {
+	ID         string    `json:"id"`
+	QuestionID string    `json:"question_id"`
+	OptionText string    `json:"option_text"`
+	IsCorrect  bool      `json:"is_correct"`
+	SortOrder  int       `json:"sort_order"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type Feedback struct {
+	ID                 string   `json:"id"`
+	EnrollmentID       string   `json:"enrollment_id"`
+	InstructorRating   *int     `json:"instructor_rating,omitempty"`
+	ContentRating      *int     `json:"content_rating,omitempty"`
+	OrganizationRating *int     `json:"organization_rating,omitempty"`
+	PlatformRating     *int     `json:"platform_rating,omitempty"`
+	OverallRating      *float64 `json:"overall_rating,omitempty"`
+	Comments           *string  `json:"comments,omitempty"`
+	CreatedBy          string   `json:"created_by"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+type ContentProgress struct {
+	ID                 string     `json:"id"`
+	EnrollmentID       string     `json:"enrollment_id"`
+	ContentID          string     `json:"content_id"`
+	ProgressPercentage int        `json:"progress_percentage"`
+	TimeSpentSeconds   int        `json:"time_spent_seconds"`
+	LastPosition       int        `json:"last_position"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }

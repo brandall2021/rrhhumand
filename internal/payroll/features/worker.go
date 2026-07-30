@@ -1,7 +1,6 @@
 package features
 
 import (
-	"context"
 	"log"
 	"time"
 )

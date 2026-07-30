@@ -915,9 +915,9 @@ func (r *Repository) GetBandAnalysis(ctx context.Context, companyID, bandID stri
 // ---------------------------------------------------------------------------
 
 func (r *Repository) GetExpiringBenefits(ctx context.Context) ([]EmployeeBenefit, error) {
-	q := `SELECT eb.id, eb.employee_id, eb.company_id, eb.benefit_id, eb.effective_date, eb.expiration_date, eb.status, eb.enrollment_data, eb.created_at, eb.updated_at
+	q := `SELECT eb.id, eb.employee_id, eb.company_id, eb.benefit_id, eb.enrollment_date, eb.effective_from, eb.effective_to, eb.status, eb.created_at, eb.updated_at
 		FROM employee_benefits eb
-		WHERE eb.status='active' AND eb.expiration_date IS NOT NULL AND eb.expiration_date <= NOW() + INTERVAL '14 days' AND eb.expiration_date > NOW()`
+		WHERE eb.status='active' AND eb.effective_to IS NOT NULL AND eb.effective_to <= NOW() + INTERVAL '14 days' AND eb.effective_to > NOW()`
 	rows, err := r.pool.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -926,8 +926,8 @@ func (r *Repository) GetExpiringBenefits(ctx context.Context) ([]EmployeeBenefit
 	var result []EmployeeBenefit
 	for rows.Next() {
 		var eb EmployeeBenefit
-		if err := rows.Scan(&eb.ID, &eb.EmployeeID, &eb.CompanyID, &eb.BenefitID, &eb.EffectiveDate, &eb.ExpirationDate,
-			&eb.Status, &eb.EnrollmentData, &eb.CreatedAt, &eb.UpdatedAt); err != nil {
+		if err := rows.Scan(&eb.ID, &eb.EmployeeID, &eb.CompanyID, &eb.BenefitID, &eb.EnrollmentDate, &eb.EffectiveFrom,
+			&eb.EffectiveTo, &eb.Status, &eb.CreatedAt, &eb.UpdatedAt); err != nil {
 			return nil, err
 		}
 		result = append(result, eb)
@@ -936,9 +936,9 @@ func (r *Repository) GetExpiringBenefits(ctx context.Context) ([]EmployeeBenefit
 }
 
 func (r *Repository) GetBudgetsNearThreshold(ctx context.Context) ([]CompensationBudget, error) {
-	q := `SELECT id, company_id, fiscal_year, period, base_amount, committed_amount, spent_amount, status, created_by, created_at, updated_at
+	q := `SELECT id, company_id, year, budget_amount, committed_amount, spent_amount, status, created_by, created_at, updated_at
 		FROM compensation_budgets
-		WHERE COALESCE(committed_amount,0)+COALESCE(spent_amount,0) > base_amount * 0.85 AND status='active'`
+		WHERE COALESCE(committed_amount,0)+COALESCE(spent_amount,0) > budget_amount * 0.85 AND status='active'`
 	rows, err := r.pool.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -947,7 +947,7 @@ func (r *Repository) GetBudgetsNearThreshold(ctx context.Context) ([]Compensatio
 	var result []CompensationBudget
 	for rows.Next() {
 		var b CompensationBudget
-		if err := rows.Scan(&b.ID, &b.CompanyID, &b.FiscalYear, &b.Period, &b.BaseAmount, &b.CommittedAmount, &b.SpentAmount,
+		if err := rows.Scan(&b.ID, &b.CompanyID, &b.Year, &b.BudgetAmount, &b.CommittedAmount, &b.SpentAmount,
 			&b.Status, &b.CreatedBy, &b.CreatedAt, &b.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -982,6 +982,6 @@ func (r *Repository) NotifyBenefitExpiration(ctx context.Context, eb EmployeeBen
 }
 
 func (r *Repository) NotifyBudgetAlert(ctx context.Context, b CompensationBudget) error {
-	r.log.Warn("budget near threshold", zap.String("budget_id", b.ID), zap.String("company_id", b.CompanyID), zap.Int("fiscal_year", b.FiscalYear))
+	r.log.Warn("budget near threshold", zap.String("budget_id", b.ID), zap.String("company_id", b.CompanyID), zap.Int("year", b.Year))
 	return nil
 }

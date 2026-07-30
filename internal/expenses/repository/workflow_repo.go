@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -68,17 +67,37 @@ func (r *WorkflowRepo) UpdateWorkflow(ctx context.Context, w *domain.ExpenseWork
 }
 
 func (r *WorkflowRepo) CreateStep(ctx context.Context, s *domain.ExpenseWorkflowStep) error {
-	q := `INSERT INTO expense_workflow_steps (id,workflow_id,step_order,approver_type,approver_id,
-		role_name,min_amount,max_amount,required_approvals)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
-	_, err := r.pool.Exec(ctx, q, s.ID, s.WorkflowID, s.StepOrder, s.ApproverType, s.ApproverID,
-		s.RoleName, s.MinAmount, s.MaxAmount, s.RequiredApprovals)
+	q := `INSERT INTO expense_workflow_steps (id,workflow_id,step_order,approval_type,approver_role_id,
+		max_rejection_count,is_required)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)`
+	_, err := r.pool.Exec(ctx, q, s.ID, s.WorkflowID, s.StepOrder, s.ApprovalType, s.ApproverRoleID,
+		s.MaxRejectionCount, s.IsRequired)
 	return repoErr("CreateStep", err)
 }
 
+func (r *WorkflowRepo) GetSteps(ctx context.Context, workflowID uuid.UUID) ([]domain.ExpenseWorkflowStep, error) {
+	return r.ListSteps(ctx, workflowID)
+}
+
+func (r *WorkflowRepo) GetByEntityType(ctx context.Context, companyID uuid.UUID, entityType string) (*domain.ExpenseWorkflow, error) {
+	q := `SELECT id,company_id,name,description,workflow_type,
+		min_amount,max_amount,is_active,created_by,created_at,updated_at
+		FROM expense_workflows
+		WHERE company_id=$1 AND workflow_type=$2 AND is_active=true
+		LIMIT 1`
+	row := r.pool.QueryRow(ctx, q, companyID, entityType)
+	var w domain.ExpenseWorkflow
+	err := row.Scan(&w.ID, &w.CompanyID, &w.Name, &w.Description, &w.WorkflowType,
+		&w.MinAmount, &w.MaxAmount, &w.IsActive, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt)
+	if err != nil {
+		return nil, repoErr("WorkflowRepo.GetByEntityType", err)
+	}
+	return &w, nil
+}
+
 func (r *WorkflowRepo) ListSteps(ctx context.Context, workflowID uuid.UUID) ([]domain.ExpenseWorkflowStep, error) {
-	q := `SELECT id,workflow_id,step_order,approver_type,approver_id,role_name,
-		min_amount,max_amount,required_approvals,created_at,updated_at
+	q := `SELECT id,workflow_id,step_order,approval_type,approver_role_id,
+		max_rejection_count,is_required,created_at
 		FROM expense_workflow_steps WHERE workflow_id=$1 ORDER BY step_order`
 	rows, err := r.pool.Query(ctx, q, workflowID)
 	if err != nil {
@@ -87,18 +106,18 @@ func (r *WorkflowRepo) ListSteps(ctx context.Context, workflowID uuid.UUID) ([]d
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpenseWorkflowStep, error) {
 		var s domain.ExpenseWorkflowStep
-		err := row.Scan(&s.ID, &s.WorkflowID, &s.StepOrder, &s.ApproverType, &s.ApproverID, &s.RoleName,
-			&s.MinAmount, &s.MaxAmount, &s.RequiredApprovals, &s.CreatedAt, &s.UpdatedAt)
+		err := row.Scan(&s.ID, &s.WorkflowID, &s.StepOrder, &s.ApprovalType, &s.ApproverRoleID,
+			&s.MaxRejectionCount, &s.IsRequired, &s.CreatedAt)
 		return s, err
 	})
 }
 
 func (r *WorkflowRepo) UpdateStep(ctx context.Context, s *domain.ExpenseWorkflowStep) error {
-	q := `UPDATE expense_workflow_steps SET step_order=$1,approver_type=$2,approver_id=$3,
-		role_name=$4,min_amount=$5,max_amount=$6,required_approvals=$7,updated_at=NOW()
-		WHERE id=$8 AND workflow_id=$9`
-	_, err := r.pool.Exec(ctx, q, s.StepOrder, s.ApproverType, s.ApproverID, s.RoleName,
-		s.MinAmount, s.MaxAmount, s.RequiredApprovals, s.ID, s.WorkflowID)
+	q := `UPDATE expense_workflow_steps SET step_order=$1,approval_type=$2,approver_role_id=$3,
+		max_rejection_count=$4,is_required=$5
+		WHERE id=$6 AND workflow_id=$7`
+	_, err := r.pool.Exec(ctx, q, s.StepOrder, s.ApprovalType, s.ApproverRoleID,
+		s.MaxRejectionCount, s.IsRequired, s.ID, s.WorkflowID)
 	return repoErr("UpdateStep", err)
 }
 

@@ -192,7 +192,7 @@ func (s *PayrollService) CreateGarnishment(ctx context.Context, companyID, userI
 func (s *PayrollService) ListGarnishments(ctx context.Context, companyID, employeeID string) ([]domain.PayrollGarnishment, error) {
 	garnishments, err := s.repo.ListGarnishments(ctx, companyID, employeeID)
 	if err != nil {
-		return nil, fmt.Errorf("list garnishings: %w", err)
+		return nil, fmt.Errorf("list garnishments: %w", err)
 	}
-	return garnishings, nil
+	return garnishments, nil
 }

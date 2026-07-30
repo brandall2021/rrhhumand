@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/rrhhumand/api/internal/payroll/domain"
-	"github.com/rrhhumand/api/internal/payroll/repository"
 )
 
 type CreatePeriodInput struct {
@@ -90,7 +89,7 @@ func (s *PayrollService) ClosePeriod(ctx context.Context, companyID, id, userID 
 	if p.Status == "CLOSED" {
 		return fmt.Errorf("close period: period already closed")
 	}
-	if err := s.repo.ClosePeriod(ctx, id, userID); err != nil {
+	if err := s.repo.ClosePeriod(ctx, id); err != nil {
 		return fmt.Errorf("close period: %w", err)
 	}
 	return nil
@@ -135,11 +134,5 @@ func (s *PayrollService) ListRuns(ctx context.Context, companyID string, periodI
 	if limit <= 0 {
 		limit = 20
 	}
-	return s.repo.ListRuns(ctx, companyID, repository.RunFilter{
-		PeriodID: periodID,
-		RunType:  runType,
-		Status:   status,
-		Limit:    limit,
-		Offset:   offset,
-	})
+	return s.repo.ListRuns(ctx, companyID, periodID, runType, status, limit, offset)
 }

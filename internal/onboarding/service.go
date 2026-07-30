@@ -313,18 +313,23 @@ func (s *Service) CreateTask(ctx context.Context, companyID string, onboardingID
 		required = *req.Required
 	}
 
+	sortOrder := 0
+	if req.SortOrder != nil {
+		sortOrder = *req.SortOrder
+	}
+
 	t := &OnboardingTask{
-		OnboardingID:    onboardingID,
-		CompanyID:       companyID,
-		EmployeeID:      p.EmployeeID,
-		Title:           req.Title,
-		Description:     req.Description,
-		Category:        req.Category,
-		ResponsibleType: req.ResponsibleType,
-		ResponsibleID:   req.ResponsibleID,
-		DueDate:         dueDate,
-		Required:        required,
-		SortOrder:       req.SortOrder,
+		OnboardingID:     onboardingID,
+		CompanyID:        companyID,
+		EmployeeID:       p.EmployeeID,
+		Title:            req.Title,
+		Description:      req.Description,
+		Category:         req.Category,
+		ResponsibleType:  req.ResponsibleType,
+		ResponsibleID:    req.ResponsibleID,
+		DueDate:          dueDate,
+		Required:         required,
+		SortOrder:        sortOrder,
 		EstimatedMinutes: req.EstimatedMinutes,
 	}
 	if err := s.repo.CreateTask(ctx, t); err != nil {

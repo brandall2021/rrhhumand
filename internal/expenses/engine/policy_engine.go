@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/rrhhumand/api/internal/expenses/domain"
@@ -27,17 +26,12 @@ func engErr(op string, err error) error {
 }
 
 func (e *PolicyEngine) Evaluate(ctx context.Context, expense domain.ExpenseContext) (domain.PolicyResult, error) {
-	expenseDate, err := time.Parse("2006-01-02", expense.ExpenseDate)
-	if err != nil {
-		expenseDate = time.Now()
-	}
-
 	companyID, err := uuid.Parse(expense.CompanyID)
 	if err != nil {
 		return domain.PolicyResult{}, engErr("Evaluate.parseCompanyID", err)
 	}
 
-	rules, err := e.policyRepo.GetActiveRules(ctx, companyID, expenseDate)
+	rules, err := e.policyRepo.GetActiveRules(ctx, companyID)
 	if err != nil {
 		return domain.PolicyResult{}, engErr("Evaluate.getRules", err)
 	}

@@ -12,7 +12,6 @@ import (
 
 	"github.com/rrhhumand/api/internal/events"
 	"github.com/rrhhumand/api/internal/notifications"
-	"github.com/rrhhumand/api/internal/tenant"
 )
 
 type Service struct {
@@ -111,12 +110,18 @@ func (s *Service) CreateCourse(ctx context.Context, companyID, userID string, re
 		Status:                 "draft",
 		Mandatory:              false,
 		PassingScore:           req.PassingScore,
-		CertificateEnabled:     req.CertificateEnabled,
-		MinAttendancePercentage: req.MinAttendancePercentage,
-		CreatedBy:              userID,
+		CertificateEnabled:     false,
+		MinAttendancePercentage: 0,
+		CreatedBy:   userID,
 	}
 	if req.Mandatory != nil {
 		c.Mandatory = *req.Mandatory
+	}
+	if req.CertificateEnabled != nil {
+		c.CertificateEnabled = *req.CertificateEnabled
+	}
+	if req.MinAttendancePercentage != nil {
+		c.MinAttendancePercentage = *req.MinAttendancePercentage
 	}
 	if err := s.repo.CreateCourse(ctx, c); err != nil {
 		return nil, svcErr("CreateCourse", err)
@@ -163,10 +168,10 @@ func (s *Service) UpdateCourse(ctx context.Context, companyID, id string, req Up
 		c.PassingScore = req.PassingScore
 	}
 	if req.CertificateEnabled != nil {
-		c.CertificateEnabled = req.CertificateEnabled
+		c.CertificateEnabled = *req.CertificateEnabled
 	}
 	if req.MinAttendancePercentage != nil {
-		c.MinAttendancePercentage = req.MinAttendancePercentage
+		c.MinAttendancePercentage = *req.MinAttendancePercentage
 	}
 	if err := s.repo.UpdateCourse(ctx, c); err != nil {
 		return nil, svcErr("UpdateCourse", err)
@@ -228,7 +233,7 @@ func (s *Service) CreateVersion(ctx context.Context, courseID, userID string, re
 		Version:     req.Version,
 		Description: req.Description,
 		IsPublished: true,
-		CreatedBy:   userID,
+		CreatedBy:   &userID,
 	}
 	if err := s.repo.CreateVersion(ctx, v); err != nil {
 		return nil, svcErr("CreateVersion", err)
@@ -252,19 +257,11 @@ func (s *Service) CreateContent(ctx context.Context, versionID, userID string, r
 		Description:     req.Description,
 		ContentType:     req.ContentType,
 		ExternalURL:     req.ExternalURL,
-		DurationSeconds: req.DurationSeconds,
-		SortOrder:       req.SortOrder,
-		Required:        req.Required,
+		DurationSeconds: 0,
+		SortOrder:       0,
+		Required:        false,
 		Published:       false,
-		CreatedBy:       userID,
-	}
-	if c.SortOrder == nil {
-		zero := 0
-		c.SortOrder = &zero
-	}
-	if c.Required == nil {
-		f := false
-		c.Required = &f
+		CreatedBy:       &userID,
 	}
 	if err := s.repo.CreateContent(ctx, c); err != nil {
 		return nil, svcErr("CreateContent", err)
@@ -290,16 +287,16 @@ func (s *Service) UpdateContent(ctx context.Context, id string, req UpdateConten
 		c.ExternalURL = req.ExternalURL
 	}
 	if req.DurationSeconds != nil {
-		c.DurationSeconds = req.DurationSeconds
+		c.DurationSeconds = *req.DurationSeconds
 	}
 	if req.SortOrder != nil {
-		c.SortOrder = req.SortOrder
+		c.SortOrder = *req.SortOrder
 	}
 	if req.Required != nil {
-		c.Required = req.Required
+		c.Required = *req.Required
 	}
 	if req.Published != nil {
-		c.Published = req.Published
+		c.Published = *req.Published
 	}
 	if err := s.repo.UpdateContent(ctx, c); err != nil {
 		return nil, svcErr("UpdateContent", err)
@@ -326,18 +323,22 @@ func (s *Service) CreateOffering(ctx context.Context, companyID, userID string, 
 		CourseID:        req.CourseID,
 		CourseVersionID: req.CourseVersionID,
 		Name:            req.Name,
-		StartDate:       req.StartDate,
-		EndDate:         req.EndDate,
-		Capacity:        req.Capacity,
+		StartDate:       parseTimePtr(req.StartDate),
+		EndDate:         parseTimePtr(req.EndDate),
 		Modality:        req.Modality,
 		Location:        req.Location,
 		MeetingURL:      req.MeetingURL,
 		InstructorID:    req.InstructorID,
 		ProviderID:      req.ProviderID,
 		CostAmount:      req.CostAmount,
-		CostCurrency:    req.CostCurrency,
 		Status:          "draft",
-		CreatedBy:       userID,
+		CreatedBy:       &userID,
+	}
+	if req.Capacity != nil {
+		o.Capacity = *req.Capacity
+	}
+	if req.CostCurrency != nil {
+		o.CostCurrency = *req.CostCurrency
 	}
 	if err := s.repo.CreateOffering(ctx, o); err != nil {
 		return nil, svcErr("CreateOffering", err)
@@ -354,13 +355,13 @@ func (s *Service) UpdateOffering(ctx context.Context, companyID, id string, req 
 		o.Name = *req.Name
 	}
 	if req.StartDate != nil {
-		o.StartDate = req.StartDate
+		o.StartDate = parseTimePtr(req.StartDate)
 	}
 	if req.EndDate != nil {
-		o.EndDate = req.EndDate
+		o.EndDate = parseTimePtr(req.EndDate)
 	}
 	if req.Capacity != nil {
-		o.Capacity = req.Capacity
+		o.Capacity = *req.Capacity
 	}
 	if req.Modality != nil {
 		o.Modality = req.Modality
@@ -381,7 +382,7 @@ func (s *Service) UpdateOffering(ctx context.Context, companyID, id string, req 
 		o.CostAmount = req.CostAmount
 	}
 	if req.CostCurrency != nil {
-		o.CostCurrency = req.CostCurrency
+		o.CostCurrency = *req.CostCurrency
 	}
 	if req.Status != nil {
 		o.Status = *req.Status
@@ -405,11 +406,12 @@ func (s *Service) ListOfferings(ctx context.Context, companyID string, filter Of
 // ---------------------------------------------------------------------------
 
 func (s *Service) CreateSession(ctx context.Context, offeringID, userID string, req CreateSessionRequest) (*OfferingSession, error) {
+	sessionDate, _ := time.Parse("2006-01-02", req.SessionDate)
 	sess := &OfferingSession{
 		ID:           uuid.New().String(),
 		OfferingID:   offeringID,
 		Title:        req.Title,
-		SessionDate:  req.SessionDate,
+		SessionDate:  sessionDate,
 		StartTime:    req.StartTime,
 		EndTime:      req.EndTime,
 		Location:     req.Location,
@@ -437,7 +439,7 @@ func (s *Service) Enroll(ctx context.Context, companyID, offeringID, userID stri
 	if err != nil {
 		return nil, svcErr("Enroll", err)
 	}
-	if o.Capacity != nil && o.EnrolledCount >= *o.Capacity {
+	if o.Capacity > 0 && o.EnrolledCount >= o.Capacity {
 		return nil, fmt.Errorf("offering at full capacity")
 	}
 	e := &Enrollment{
@@ -447,7 +449,7 @@ func (s *Service) Enroll(ctx context.Context, companyID, offeringID, userID stri
 		EmployeeID:     req.EmployeeID,
 		AssignmentType: req.AssignmentType,
 		Status:         "enrolled",
-		CreatedBy:      userID,
+		CreatedBy:      &userID,
 	}
 	if e.AssignmentType == "" {
 		e.AssignmentType = "voluntary"
@@ -480,15 +482,19 @@ func (s *Service) CompleteEnrollment(ctx context.Context, companyID, id string) 
 	if err != nil {
 		return svcErr("CompleteEnrollment", err)
 	}
-	if c.CertificateEnabled != nil && *c.CertificateEnabled {
+	if c.CertificateEnabled {
 		// Generate certificate URL placeholder — actual PDF gen would go here
 		certURL := fmt.Sprintf("certificates/%s/%s.pdf", companyID, id)
 		if err := s.repo.UpdateCertificate(ctx, id, certURL); err != nil {
 			return svcErr("CompleteEnrollment", err)
 		}
 	}
+	createdBy := ""
+	if e.CreatedBy != nil {
+		createdBy = *e.CreatedBy
+	}
 	s.createEvent(ctx, companyID, "enrollment_completed", "Course Completed",
-		fmt.Sprintf("Employee completed course"), e.CreatedBy, e.EmployeeID, "", "success", nil)
+		fmt.Sprintf("Employee completed course"), createdBy, e.EmployeeID, "", "success", nil)
 	return nil
 }
 
@@ -535,9 +541,9 @@ func (s *Service) CreateAssignment(ctx context.Context, companyID, userID string
 		CompanyID:      companyID,
 		CourseID:       req.CourseID,
 		AssigneeType:   req.AssigneeType,
-		AssigneeID:     req.AssigneeID,
+		AssigneeID:     &req.AssigneeID,
 		AssignmentType: req.AssignmentType,
-		DueDate:        req.DueDate,
+		DueDate:        parseTimePtr(req.DueDate),
 		CreatedBy:      userID,
 	}
 	if err := s.repo.CreateAssignment(ctx, a); err != nil {
@@ -597,13 +603,19 @@ func (s *Service) CreateAssessment(ctx context.Context, companyID, userID string
 		Title:             req.Title,
 		Description:       req.Description,
 		AssessmentType:    req.AssessmentType,
-		AttemptsAllowed:   req.AttemptsAllowed,
 		PassingScore:      req.PassingScore,
 		TimeLimitMinutes:  req.TimeLimitMinutes,
-		RandomizeQuestions: req.RandomizeQuestions,
-		ShowResults:       req.ShowResults,
 		Status:            "draft",
-		CreatedBy:         userID,
+		CreatedBy:         &userID,
+	}
+	if req.AttemptsAllowed != nil {
+		a.AttemptsAllowed = *req.AttemptsAllowed
+	}
+	if req.RandomizeQuestions != nil {
+		a.RandomizeQuestions = *req.RandomizeQuestions
+	}
+	if req.ShowResults != nil {
+		a.ShowResults = *req.ShowResults
 	}
 	if err := s.repo.CreateAssessment(ctx, a); err != nil {
 		return nil, svcErr("CreateAssessment", err)
@@ -623,7 +635,7 @@ func (s *Service) UpdateAssessment(ctx context.Context, companyID, id string, re
 		a.Description = req.Description
 	}
 	if req.AttemptsAllowed != nil {
-		a.AttemptsAllowed = req.AttemptsAllowed
+		a.AttemptsAllowed = *req.AttemptsAllowed
 	}
 	if req.PassingScore != nil {
 		a.PassingScore = req.PassingScore
@@ -632,10 +644,10 @@ func (s *Service) UpdateAssessment(ctx context.Context, companyID, id string, re
 		a.TimeLimitMinutes = req.TimeLimitMinutes
 	}
 	if req.RandomizeQuestions != nil {
-		a.RandomizeQuestions = req.RandomizeQuestions
+		a.RandomizeQuestions = *req.RandomizeQuestions
 	}
 	if req.ShowResults != nil {
-		a.ShowResults = req.ShowResults
+		a.ShowResults = *req.ShowResults
 	}
 	if req.Status != nil {
 		a.Status = *req.Status
@@ -669,12 +681,11 @@ func (s *Service) AddQuestion(ctx context.Context, assessmentID string, req Crea
 		AssessmentID: assessmentID,
 		Question:     req.Question,
 		QuestionType: req.QuestionType,
-		Points:       req.Points,
+		Points:       1.0,
 		SortOrder:    len(existing) + 1,
 	}
-	if q.Points == nil {
-		p := 1.0
-		q.Points = &p
+	if req.Points != nil {
+		q.Points = *req.Points
 	}
 	if err := s.repo.CreateQuestion(ctx, q); err != nil {
 		return nil, svcErr("AddQuestion", err)
@@ -684,8 +695,10 @@ func (s *Service) AddQuestion(ctx context.Context, assessmentID string, req Crea
 			ID:         uuid.New().String(),
 			QuestionID: q.ID,
 			OptionText: opt.OptionText,
-			IsCorrect:  opt.IsCorrect,
 			SortOrder:  i + 1,
+		}
+		if opt.IsCorrect != nil {
+			o.IsCorrect = *opt.IsCorrect
 		}
 		if err := s.repo.CreateOption(ctx, o); err != nil {
 			return nil, svcErr("AddQuestion", err)
@@ -723,7 +736,7 @@ func (s *Service) StartAttempt(ctx context.Context, enrollmentID, assessmentID s
 	if err != nil {
 		return nil, svcErr("StartAttempt", err)
 	}
-	if assessment.AttemptsAllowed != nil && len(existing) >= *assessment.AttemptsAllowed {
+	if assessment.AttemptsAllowed > 0 && len(existing) >= assessment.AttemptsAllowed {
 		return nil, fmt.Errorf("maximum attempts reached")
 	}
 	a := &Attempt{
@@ -756,7 +769,7 @@ func (s *Service) SubmitAttempt(ctx context.Context, attemptID string, req Submi
 	totalPoints := 0.0
 	earnedPoints := 0.0
 	for _, q := range questions {
-		totalPoints += *q.Points
+		totalPoints += q.Points
 	}
 	answerMap := make(map[string]AnswerRequest)
 	for _, ans := range req.Answers {
@@ -776,7 +789,7 @@ func (s *Service) SubmitAttempt(ctx context.Context, attemptID string, req Submi
 					return nil, svcErr("SubmitAttempt", err)
 				}
 				for _, opt := range opts {
-					if opt.ID == *ans.SelectedOptionID && opt.IsCorrect != nil && *opt.IsCorrect {
+					if opt.ID == *ans.SelectedOptionID && opt.IsCorrect {
 						isCorrect = true
 						break
 					}
@@ -784,7 +797,7 @@ func (s *Service) SubmitAttempt(ctx context.Context, attemptID string, req Submi
 			}
 		}
 		if isCorrect {
-			pointsEarned = *q.Points
+			pointsEarned = q.Points
 		}
 		earnedPoints += pointsEarned
 		answer := &Answer{
@@ -861,7 +874,7 @@ func (s *Service) CreateInstructor(ctx context.Context, companyID, userID string
 		Specialization:  req.Specialization,
 		Bio:             req.Bio,
 		Active:          true,
-		CreatedBy:       userID,
+		CreatedBy:       &userID,
 	}
 	if err := s.repo.CreateInstructor(ctx, i); err != nil {
 		return nil, svcErr("CreateInstructor", err)
@@ -893,7 +906,7 @@ func (s *Service) CreateProvider(ctx context.Context, companyID, userID string, 
 		ContactName: req.ContactName,
 		Notes:       req.Notes,
 		Active:      true,
-		CreatedBy:   userID,
+		CreatedBy:   &userID,
 	}
 	if err := s.repo.CreateProvider(ctx, p); err != nil {
 		return nil, svcErr("CreateProvider", err)
@@ -916,7 +929,7 @@ func (s *Service) CreateCompetency(ctx context.Context, companyID, userID string
 		Name:            req.Name,
 		Description:     req.Description,
 		CompetencyType:  req.CompetencyType,
-		CreatedBy:       userID,
+		CreatedBy:       &userID,
 	}
 	if err := s.repo.CreateCompetency(ctx, c); err != nil {
 		return nil, svcErr("CreateCompetency", err)
@@ -928,7 +941,7 @@ func (s *Service) CreateCompetency(ctx context.Context, companyID, userID string
 			Level:         l.Level,
 			Label:         l.Label,
 			Description:   l.Description,
-			CreatedBy:     userID,
+			CreatedBy:     &userID,
 		}
 		if err := s.repo.CreateCompetencyLevel(ctx, cl); err != nil {
 			return nil, svcErr("CreateCompetency", err)
@@ -962,8 +975,10 @@ func (s *Service) AssignCompetency(ctx context.Context, companyID, employeeID, c
 		CompetencyID:  competencyID,
 		Level:         req.Level,
 		Source:        req.Source,
-		Verified:      req.Verified,
 		VerifiedBy:    req.VerifiedBy,
+	}
+	if req.Verified != nil {
+		ec.Verified = *req.Verified
 	}
 	if err := s.repo.UpsertEmployeeCompetency(ctx, ec); err != nil {
 		return svcErr("AssignCompetency", err)
@@ -985,7 +1000,7 @@ func (s *Service) AddCourseCompetency(ctx context.Context, courseID, competencyI
 		CourseID:       courseID,
 		CompetencyID:   competencyID,
 		ExpectedLevel:  expectedLevel,
-		Weight:         weight,
+		Weight:         float64(weight),
 	}
 	if err := s.repo.AddCourseCompetency(ctx, cc); err != nil {
 		return svcErr("AddCourseCompetency", err)
@@ -1013,7 +1028,7 @@ func (s *Service) CreateTrainingNeed(ctx context.Context, companyID, userID stri
 		Source:        req.Source,
 		SourceID:      req.SourceID,
 		Status:        "open",
-		CreatedBy:     userID,
+		CreatedBy:     &userID,
 	}
 	if err := s.repo.CreateTrainingNeed(ctx, n); err != nil {
 		return nil, svcErr("CreateTrainingNeed", err)
@@ -1031,18 +1046,20 @@ func (s *Service) ListTrainingNeeds(ctx context.Context, companyID string) ([]Tr
 
 func (s *Service) CreatePlan(ctx context.Context, companyID, userID string, req CreateTrainingPlanRequest) (*TrainingPlan, error) {
 	p := &TrainingPlan{
-		ID:            uuid.New().String(),
-		CompanyID:     companyID,
-		EmployeeID:    req.EmployeeID,
-		Name:          req.Name,
-		Description:   req.Description,
-		Objectives:    req.Objectives,
-		PeriodStart:   req.PeriodStart,
-		PeriodEnd:     req.PeriodEnd,
-		BudgetAmount:  req.BudgetAmount,
-		BudgetCurrency: req.BudgetCurrency,
-		Status:        "active",
-		CreatedBy:     userID,
+		ID:           uuid.New().String(),
+		CompanyID:    companyID,
+		EmployeeID:   req.EmployeeID,
+		Name:         req.Name,
+		Description:  req.Description,
+		Objectives:   req.Objectives,
+		PeriodStart:  parseTimePtr(req.PeriodStart),
+		PeriodEnd:    parseTimePtr(req.PeriodEnd),
+		BudgetAmount: req.BudgetAmount,
+		Status:       "active",
+		CreatedBy:    userID,
+	}
+	if req.BudgetCurrency != nil {
+		p.BudgetCurrency = *req.BudgetCurrency
 	}
 	if err := s.repo.CreatePlan(ctx, p); err != nil {
 		return nil, svcErr("CreatePlan", err)
@@ -1311,19 +1328,19 @@ func (s *Service) CheckOverdueEnrollments(ctx context.Context, companyID string)
 	}
 	for _, o := range offerings {
 		if o.EndDate != nil {
-			endDate, err := time.Parse("2006-01-02", *o.EndDate)
-			if err != nil {
-				continue
-			}
-			if time.Now().After(endDate) {
+			if time.Now().After(*o.EndDate) {
 				enrollments, _, err := s.repo.ListEnrollments(ctx, companyID, EnrollmentFilter{OfferingID: &o.ID, Status: strPtr("in_progress")})
 				if err != nil {
 					continue
 				}
 				for _, e := range enrollments {
+					eventUserID := ""
+					if e.CreatedBy != nil {
+						eventUserID = *e.CreatedBy
+					}
 					s.createEvent(ctx, companyID, "enrollment_overdue", "Enrollment Overdue",
 						fmt.Sprintf("Enrollment %s is past the end date", e.ID),
-						e.CreatedBy, e.EmployeeID, o.ID, "warning", nil)
+						eventUserID, e.EmployeeID, o.ID, "warning", nil)
 				}
 			}
 		}
@@ -1341,6 +1358,17 @@ func strPtr(s string) *string {
 
 func intPtr(i int) *int {
 	return &i
+}
+
+func parseTimePtr(s *string) *time.Time {
+	if s == nil {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, *s)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 // ---------------------------------------------------------------------------

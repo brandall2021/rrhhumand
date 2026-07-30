@@ -27,6 +27,21 @@ func (r *ReportRepo) Create(ctx context.Context, rep *domain.ExpenseReport) erro
 	return repoErr("ReportRepo.Create", err)
 }
 
+func (r *ReportRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.ExpenseReport, error) {
+	q := `SELECT id,company_id,employee_id,travel_id,title,description,
+		total_amount,currency,status,submitted_at,approved_at,rejected_at,notes,created_by,created_at,updated_at
+		FROM expense_reports WHERE id=$1`
+	row := r.pool.QueryRow(ctx, q, id)
+	var rep domain.ExpenseReport
+	err := row.Scan(&rep.ID, &rep.CompanyID, &rep.EmployeeID, &rep.TravelID, &rep.Title, &rep.Description,
+		&rep.TotalAmount, &rep.Currency, &rep.Status, &rep.SubmittedAt, &rep.ApprovedAt, &rep.RejectedAt,
+		&rep.Notes, &rep.CreatedBy, &rep.CreatedAt, &rep.UpdatedAt)
+	if err != nil {
+		return nil, repoErr("ReportRepo.GetByID", err)
+	}
+	return &rep, nil
+}
+
 func (r *ReportRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain.ExpenseReport, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,title,description,
 		total_amount,currency,status,submitted_at,approved_at,rejected_at,notes,created_by,created_at,updated_at
@@ -42,7 +57,7 @@ func (r *ReportRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain.
 	return &rep, nil
 }
 
-func (r *ReportRepo) List(ctx context.Context, companyID uuid.UUID, employeeID, travelID *uuid.UUID, status *string) ([]domain.ExpenseReport, error) {
+func (r *ReportRepo) List(ctx context.Context, companyID uuid.UUID, employeeID *uuid.UUID, status *string, limit, offset int) ([]domain.ExpenseReport, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,title,description,
 		total_amount,currency,status,submitted_at,approved_at,rejected_at,notes,created_by,created_at,updated_at
 		FROM expense_reports WHERE company_id=$1`
@@ -53,17 +68,21 @@ func (r *ReportRepo) List(ctx context.Context, companyID uuid.UUID, employeeID, 
 		args = append(args, *employeeID)
 		n++
 	}
-	if travelID != nil {
-		q += fmt.Sprintf(" AND travel_id=$%d", n)
-		args = append(args, *travelID)
-		n++
-	}
 	if status != nil {
 		q += fmt.Sprintf(" AND status=$%d", n)
 		args = append(args, *status)
 		n++
 	}
 	q += " ORDER BY created_at DESC"
+	if limit > 0 {
+		q += fmt.Sprintf(" LIMIT $%d", n)
+		args = append(args, limit)
+		n++
+	}
+	if offset > 0 {
+		q += fmt.Sprintf(" OFFSET $%d", n)
+		args = append(args, offset)
+	}
 	rows, err := r.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, repoErr("ReportRepo.List", err)

@@ -204,8 +204,14 @@ func compareValues(fieldVal, operator, value string, valueTo *string) (bool, err
 		if valueTo == nil {
 			return false, fmt.Errorf("BETWEEN requires value_to")
 		}
-		return numericCompare(fieldVal, value, func(a, b float64) bool { return a >= b }) &&
-			numericCompare(fieldVal, *valueTo, func(a, b float64) bool { return a <= b })
+		ok, err := numericCompare(fieldVal, value, func(a, b float64) bool { return a >= b })
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+		return numericCompare(fieldVal, *valueTo, func(a, b float64) bool { return a <= b })
 	case "CONTAINS":
 		return strings.Contains(fieldVal, value), nil
 	default:

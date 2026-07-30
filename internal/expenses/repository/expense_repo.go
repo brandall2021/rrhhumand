@@ -26,9 +26,26 @@ func (r *ExpenseRepo) Create(ctx context.Context, e *domain.Expense) error {
 		status,notes,receipt_required,is_billable,billable_client,created_by)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`
 	_, err := r.pool.Exec(ctx, q, e.ID, e.CompanyID, e.EmployeeID, e.TravelID, e.CategoryID, e.PaymentMethodID,
-		e.ReportID, e.Description, e.Merchant, e.Amount, e.TaxAmount, e.TotalAmount, e.Currency,
-		e.ExchangeRate, e.ExpenseDate, e.Status, e.Notes, e.ReceiptRequired, e.IsBillable, e.BillableClient, e.CreatedBy)
+		e.ExpenseReportID, e.Description, e.MerchantName, e.OriginalAmount, e.TaxAmount, e.TotalAmount, e.OriginalCurrency,
+		e.ExchangeRate, e.ExpenseDate, e.Status, e.Observation, e.ReceiptRequired, e.IsBillable, e.BillableClient, e.CreatedBy)
 	return repoErr("ExpenseRepo.Create", err)
+}
+
+func (r *ExpenseRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Expense, error) {
+	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
+		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
+		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		FROM expenses WHERE id=$1`
+	row := r.pool.QueryRow(ctx, q, id)
+	var e domain.Expense
+	err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ExpenseReportID,
+		&e.Description, &e.MerchantName, &e.OriginalAmount, &e.TaxAmount, &e.TotalAmount, &e.OriginalCurrency,
+		&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Observation, &e.ReceiptRequired, &e.IsBillable,
+		&e.BillableClient, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt)
+	if err != nil {
+		return nil, repoErr("ExpenseRepo.GetByID", err)
+	}
+	return &e, nil
 }
 
 func (r *ExpenseRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain.Expense, error) {
@@ -38,9 +55,9 @@ func (r *ExpenseRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain
 		FROM expenses WHERE id=$1 AND company_id=$2`
 	row := r.pool.QueryRow(ctx, q, id, companyID)
 	var e domain.Expense
-	err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ReportID,
-		&e.Description, &e.Merchant, &e.Amount, &e.TaxAmount, &e.TotalAmount, &e.Currency,
-		&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Notes, &e.ReceiptRequired, &e.IsBillable,
+	err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ExpenseReportID,
+		&e.Description, &e.MerchantName, &e.OriginalAmount, &e.TaxAmount, &e.TotalAmount, &e.OriginalCurrency,
+		&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Observation, &e.ReceiptRequired, &e.IsBillable,
 		&e.BillableClient, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt)
 	if err != nil {
 		return nil, repoErr("ExpenseRepo.Get", err)
@@ -48,7 +65,7 @@ func (r *ExpenseRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain
 	return &e, nil
 }
 
-func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID, travelID *uuid.UUID, status, categoryID *string, dateFrom, dateTo *time.Time, limit, offset int) ([]domain.Expense, error) {
+func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID, travelID *uuid.UUID, status *string, dateFrom, dateTo *time.Time, limit, offset int) ([]domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
 		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
 		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
@@ -68,11 +85,6 @@ func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID,
 	if status != nil {
 		q += fmt.Sprintf(" AND status=$%d", n)
 		args = append(args, *status)
-		n++
-	}
-	if categoryID != nil {
-		q += fmt.Sprintf(" AND category_id=$%d", n)
-		args = append(args, *categoryID)
 		n++
 	}
 	if dateFrom != nil {
@@ -102,9 +114,9 @@ func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID,
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Expense, error) {
 		var e domain.Expense
-		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ReportID,
-			&e.Description, &e.Merchant, &e.Amount, &e.TaxAmount, &e.TotalAmount, &e.Currency,
-			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Notes, &e.ReceiptRequired, &e.IsBillable,
+		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ExpenseReportID,
+			&e.Description, &e.MerchantName, &e.OriginalAmount, &e.TaxAmount, &e.TotalAmount, &e.OriginalCurrency,
+			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Observation, &e.ReceiptRequired, &e.IsBillable,
 			&e.BillableClient, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt)
 		return e, err
 	})
@@ -115,9 +127,9 @@ func (r *ExpenseRepo) Update(ctx context.Context, e *domain.Expense) error {
 		amount=$5,tax_amount=$6,total_amount=$7,currency=$8,exchange_rate=$9,expense_date=$10,
 		status=$11,notes=$12,receipt_required=$13,is_billable=$14,billable_client=$15,updated_at=NOW()
 		WHERE id=$16 AND company_id=$17`
-	_, err := r.pool.Exec(ctx, q, e.CategoryID, e.PaymentMethodID, e.Description, e.Merchant,
-		e.Amount, e.TaxAmount, e.TotalAmount, e.Currency, e.ExchangeRate, e.ExpenseDate,
-		e.Status, e.Notes, e.ReceiptRequired, e.IsBillable, e.BillableClient, e.ID, e.CompanyID)
+	_, err := r.pool.Exec(ctx, q, e.CategoryID, e.PaymentMethodID, e.Description, e.MerchantName,
+		e.OriginalAmount, e.TaxAmount, e.TotalAmount, e.OriginalCurrency, e.ExchangeRate, e.ExpenseDate,
+		e.Status, e.Observation, e.ReceiptRequired, e.IsBillable, e.BillableClient, e.ID, e.CompanyID)
 	return repoErr("ExpenseRepo.Update", err)
 }
 
@@ -126,8 +138,8 @@ func (r *ExpenseRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status str
 	return repoErr("ExpenseRepo.UpdateStatus", err)
 }
 
-func (r *ExpenseRepo) Delete(ctx context.Context, companyID, id uuid.UUID) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM expenses WHERE id=$1 AND company_id=$2`, id, companyID)
+func (r *ExpenseRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM expenses WHERE id=$1`, id)
 	return repoErr("ExpenseRepo.Delete", err)
 }
 
@@ -143,9 +155,9 @@ func (r *ExpenseRepo) ListByReport(ctx context.Context, expenseReportID uuid.UUI
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Expense, error) {
 		var e domain.Expense
-		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ReportID,
-			&e.Description, &e.Merchant, &e.Amount, &e.TaxAmount, &e.TotalAmount, &e.Currency,
-			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Notes, &e.ReceiptRequired, &e.IsBillable,
+		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ExpenseReportID,
+			&e.Description, &e.MerchantName, &e.OriginalAmount, &e.TaxAmount, &e.TotalAmount, &e.OriginalCurrency,
+			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Observation, &e.ReceiptRequired, &e.IsBillable,
 			&e.BillableClient, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt)
 		return e, err
 	})
@@ -164,9 +176,9 @@ func (r *ExpenseRepo) Search(ctx context.Context, companyID uuid.UUID, query str
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Expense, error) {
 		var e domain.Expense
-		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ReportID,
-			&e.Description, &e.Merchant, &e.Amount, &e.TaxAmount, &e.TotalAmount, &e.Currency,
-			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Notes, &e.ReceiptRequired, &e.IsBillable,
+		err := row.Scan(&e.ID, &e.CompanyID, &e.EmployeeID, &e.TravelID, &e.CategoryID, &e.PaymentMethodID, &e.ExpenseReportID,
+			&e.Description, &e.MerchantName, &e.OriginalAmount, &e.TaxAmount, &e.TotalAmount, &e.OriginalCurrency,
+			&e.ExchangeRate, &e.ExpenseDate, &e.Status, &e.Observation, &e.ReceiptRequired, &e.IsBillable,
 			&e.BillableClient, &e.CreatedBy, &e.CreatedAt, &e.UpdatedAt)
 		return e, err
 	})

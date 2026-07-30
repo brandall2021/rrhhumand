@@ -341,7 +341,6 @@ func main() {
 	expBudgetRepo := expensesrepo.NewBudgetRepo(pool)
 	expExchangeRepo := expensesrepo.NewExchangeRepo(pool)
 	expAllowanceRepo := expensesrepo.NewAllowanceRepo(pool)
-	expCardRepo := expensesrepo.NewCardRepo(pool)
 	expAuditRepo := expensesrepo.NewAuditRepo(pool)
 	expDuplicateRepo := expensesrepo.NewDuplicateRepo(pool)
 
@@ -352,7 +351,7 @@ func main() {
 	expAdvanceSvc := expensesapp.NewAdvanceService(expAdvanceRepo, expAuditRepo)
 	expReimbursementSvc := expensesapp.NewReimbursementService(expReimbursementRepo, expAuditRepo)
 	expPolicySvc := expensesapp.NewPolicyService(expPolicyRepo, expExpenseRepo)
-	expApprovalSvc := expensesapp.NewApprovalService(expApprovalRepo, expWorkflowRepo, expExpenseRepo, expTravelRepo, expReportRepo, expAdvanceRepo)
+	expApprovalSvc := expensesapp.NewApprovalService(expApprovalRepo, expWorkflowRepo, expExpenseRepo, expTravelRepo, expReportRepo, expAdvanceRepo, expAuditRepo)
 	expBudgetSvc := expensesapp.NewBudgetService(expBudgetRepo)
 	expExchangeSvc := expensesapp.NewExchangeService(expExchangeRepo)
 	expAllowanceSvc := expensesapp.NewAllowanceService(expAllowanceRepo)
@@ -428,11 +427,11 @@ func main() {
 		perfHandler,
 		recHandler,
 		trainingHandler,
+		onbFase23Handler,
 		compHandler,
 		featuresHandler,
 		benefitsHandler,
 		expensesHandler,
-		onbFase23Handler,
 		pool,
 	)
 

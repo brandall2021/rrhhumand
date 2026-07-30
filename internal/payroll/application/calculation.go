@@ -10,7 +10,6 @@ import (
 
 	"github.com/rrhhumand/api/internal/payroll/domain"
 	"github.com/rrhhumand/api/internal/payroll/engine"
-	"github.com/rrhhumand/api/internal/payroll/repository"
 )
 
 func (s *PayrollService) AddEmployeeToRun(ctx context.Context, companyID, runID, employeeID string) (*domain.PayrollRunEmployee, error) {
@@ -28,7 +27,7 @@ func (s *PayrollService) AddEmployeeToRun(ctx context.Context, companyID, runID,
 		Status:     "PENDING",
 		Currency:   "ARS",
 	}
-	if err := s.repo.AddRunEmployee(ctx, re); err != nil {
+	if err := s.repo.CreateRunEmployee(ctx, re); err != nil {
 		return nil, fmt.Errorf("add employee: %w", err)
 	}
 	return re, nil
@@ -76,7 +75,7 @@ func (s *PayrollService) CalculateRun(ctx context.Context, companyID, runID stri
 		return fmt.Errorf("calculate: load period: %w", err)
 	}
 
-	concepts, err := s.repo.ListConcepts(ctx, companyID, repository.ConceptFilter{Active: boolPtr(true)})
+	concepts, err := s.repo.ListConcepts(ctx, companyID, nil, nil, boolPtr(true))
 	if err != nil {
 		rollback()
 		return fmt.Errorf("calculate: load concepts: %w", err)
@@ -107,8 +106,6 @@ func (s *PayrollService) CalculateRun(ctx context.Context, companyID, runID stri
 
 	limits, _ := s.repo.GetActiveLimits(ctx, companyID, period.StartDate)
 	minWage, _ := s.repo.GetMinimumWage(ctx, "AR", period.StartDate)
-
-	ruleMap := mapRulesByConcept(rules)
 
 	for i := range employees {
 		emp := &employees[i]
@@ -147,20 +144,24 @@ func (s *PayrollService) CalculateRun(ctx context.Context, companyID, runID stri
 		}
 
 		input := engine.RuleInput{
-			CompanyID:   companyID,
-			EmployeeID:  emp.EmployeeID,
-			RunID:       runID,
-			PeriodID:    run.PeriodID,
-			BaseSalary:  baseSalary,
-			Currency:    currency,
-			Period:      *period,
-			Run:         *run,
-			Concepts:    concepts,
-			Rules:       rules,
-			RuleMap:     ruleMap,
-			Novelties:   novelties,
-			Limits:      limits,
-			MinimumWage: minWage,
+			Employee: domain.EmployeeSnapshot{
+				ID:            emp.ID,
+				RunEmployeeID: emp.ID,
+				EmployeeData: map[string]any{
+					"employee_id": emp.EmployeeID,
+				},
+				SalaryData: map[string]any{
+					"base_salary": baseSalary,
+				},
+			},
+			Period:     *period,
+			Run:        *run,
+			Concepts:   concepts,
+			Rules:      rules,
+			Novelties:  novelties,
+			Limits:     limits,
+			BaseSalary: baseSalary,
+			MinWage:    minWage,
 		}
 
 		result, err := s.engine.Evaluate(ctx, input)
@@ -182,8 +183,8 @@ func (s *PayrollService) CalculateRun(ctx context.Context, companyID, runID stri
 		emp.Status = "CALCULATED"
 		emp.GrossRemunerative = result.GrossRemunerative
 		emp.GrossNonRemunerative = result.GrossNonRemunerative
-		emp.DeductionsAmount = result.EmployeeDeductions
-		emp.EmployerContributions = result.EmployerContributions
+		emp.DeductionsAmount = result.TotalDeductions
+		emp.EmployerContributions = result.TotalContributions
 		emp.EmployerCost = result.EmployerCost
 		emp.NetAmount = result.Net
 		calcAt := time.Now()
@@ -284,10 +285,10 @@ func (s *PayrollService) CloseRun(ctx context.Context, companyID, runID, userID 
 	if run.Status != "APPROVED" {
 		return fmt.Errorf("close run: run must be APPROVED, current: %s", run.Status)
 	}
-	if err := s.repo.CloseRun(ctx, runID, userID); err != nil {
+	if err := s.repo.CloseRun(ctx, runID); err != nil {
 		return fmt.Errorf("close run: %w", err)
 	}
-	runs, err := s.repo.ListRuns(ctx, companyID, repository.RunFilter{PeriodID: &run.PeriodID, Status: strPtr("APPROVED")})
+	runs, err := s.repo.ListRuns(ctx, companyID, &run.PeriodID, nil, strPtr("APPROVED"), 0, 0)
 	if err != nil || len(runs) == 0 {
 		s.repo.UpdatePeriodStatus(ctx, run.PeriodID, "CLOSED")
 	}
@@ -331,10 +332,4 @@ func (s *PayrollService) recordError(ctx context.Context, runID string, employee
 	}
 }
 
-func mapRulesByConcept(rules []domain.PayrollRule) map[string][]domain.PayrollRule {
-	m := make(map[string][]domain.PayrollRule)
-	for _, r := range rules {
-		m[r.ConceptID] = append(m[r.ConceptID], r)
-	}
-	return m
-}
+

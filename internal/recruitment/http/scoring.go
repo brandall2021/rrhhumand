@@ -2,18 +2,19 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreateScoringModel(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.ScoringModel
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.ScoringSvc.CreateModel(c.Request.Context(), companyID, req)
+	data, err := h.ScoringSvc.CreateModel(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -23,7 +24,7 @@ func (h *Handler) CreateScoringModel(c *gin.Context) {
 
 func (h *Handler) ListScoringModels(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.ScoringSvc.ListModels(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.ScoringSvc.ListModels(c.Request.Context(), companyID)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -43,12 +44,12 @@ func (h *Handler) GetScoringModel(c *gin.Context) {
 
 func (h *Handler) UpdateScoringModel(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.ScoringModel
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.ScoringSvc.UpdateModel(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.ScoringSvc.UpdateModel(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -77,7 +78,7 @@ func (h *Handler) ListScoringCriteria(c *gin.Context) {
 
 func (h *Handler) AddScoringCriterion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.ScoringCriterion
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -92,22 +93,21 @@ func (h *Handler) AddScoringCriterion(c *gin.Context) {
 
 func (h *Handler) UpdateScoringCriterion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.ScoringCriterion
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.ScoringSvc.UpdateCriterion(c.Request.Context(), companyID, c.Param("criterionId"), req)
-	if err != nil {
+	if err := h.ScoringSvc.UpdateCriterion(c.Request.Context(), companyID, c.Param("criterionId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "criterion updated"})
 }
 
 func (h *Handler) DeleteScoringCriterion(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.ScoringSvc.DeleteCriterion(c.Request.Context(), companyID, c.Param("criterionId")); err != nil {
+	if err := h.ScoringSvc.DeleteCriterion(c.Request.Context(), companyID, c.Query("model_id"), c.Param("criterionId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -134,7 +134,7 @@ func (h *Handler) ScoreCandidate(c *gin.Context) {
 
 func (h *Handler) GetMatchingResult(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.ScoringSvc.GetMatchingResult(c.Request.Context(), companyID, c.Param("candidateId"), c.Param("positionId"))
+	data, err := h.ScoringSvc.ScoreCandidate(c.Request.Context(), companyID, c.Param("candidateId"), c.Param("positionId"))
 	if err != nil {
 		response.NotFound(c, "Matching result not found")
 		return

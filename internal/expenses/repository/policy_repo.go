@@ -2,8 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -60,17 +58,22 @@ func (r *PolicyRepo) UpdatePolicy(ctx context.Context, p *domain.ExpensePolicy) 
 }
 
 func (r *PolicyRepo) CreateRule(ctx context.Context, rule *domain.ExpensePolicyRule) error {
-	q := `INSERT INTO expense_policy_rules (id,policy_id,category_id,rule_type,operator,value,
-		currency,description,is_active,effective_from,effective_to,created_by)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`
-	_, err := r.pool.Exec(ctx, q, rule.ID, rule.PolicyID, rule.CategoryID, rule.RuleType, rule.Operator,
-		rule.Value, rule.Currency, rule.Description, rule.IsActive, rule.EffectiveFrom, rule.EffectiveTo, rule.CreatedBy)
+	q := `INSERT INTO expense_policy_rules (
+		id,policy_id,category_id,employee_category,max_amount,currency,
+		requires_receipt,requires_approval,allowed_payment_methods,
+		daily_allowance_category,conditions,priority,is_active
+	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+	_, err := r.pool.Exec(ctx, q,
+		rule.ID, rule.PolicyID, rule.CategoryID, rule.EmployeeCategory, rule.MaxAmount, rule.Currency,
+		rule.RequiresReceipt, rule.RequiresApproval, rule.AllowedPaymentMethods,
+		rule.DailyAllowanceCategory, rule.Conditions, rule.Priority, rule.IsActive)
 	return repoErr("CreateRule", err)
 }
 
 func (r *PolicyRepo) ListRules(ctx context.Context, policyID uuid.UUID) ([]domain.ExpensePolicyRule, error) {
-	q := `SELECT id,policy_id,category_id,rule_type,operator,value,currency,description,
-		is_active,effective_from,effective_to,created_by,created_at,updated_at
+	q := `SELECT id,policy_id,category_id,employee_category,max_amount,currency,
+		requires_receipt,requires_approval,allowed_payment_methods,
+		daily_allowance_category,conditions,priority,is_active,created_at,updated_at
 		FROM expense_policy_rules WHERE policy_id=$1 ORDER BY created_at`
 	rows, err := r.pool.Query(ctx, q, policyID)
 	if err != nil {
@@ -79,19 +82,22 @@ func (r *PolicyRepo) ListRules(ctx context.Context, policyID uuid.UUID) ([]domai
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpensePolicyRule, error) {
 		var rule domain.ExpensePolicyRule
-		err := row.Scan(&rule.ID, &rule.PolicyID, &rule.CategoryID, &rule.RuleType, &rule.Operator,
-			&rule.Value, &rule.Currency, &rule.Description, &rule.IsActive, &rule.EffectiveFrom, &rule.EffectiveTo,
-			&rule.CreatedBy, &rule.CreatedAt, &rule.UpdatedAt)
+		err := row.Scan(&rule.ID, &rule.PolicyID, &rule.CategoryID, &rule.EmployeeCategory, &rule.MaxAmount, &rule.Currency,
+			&rule.RequiresReceipt, &rule.RequiresApproval, &rule.AllowedPaymentMethods,
+			&rule.DailyAllowanceCategory, &rule.Conditions, &rule.Priority, &rule.IsActive, &rule.CreatedAt, &rule.UpdatedAt)
 		return rule, err
 	})
 }
 
 func (r *PolicyRepo) UpdateRule(ctx context.Context, rule *domain.ExpensePolicyRule) error {
-	q := `UPDATE expense_policy_rules SET category_id=$1,rule_type=$2,operator=$3,value=$4,
-		currency=$5,description=$6,is_active=$7,effective_from=$8,effective_to=$9,updated_at=NOW()
-		WHERE id=$10 AND policy_id=$11`
-	_, err := r.pool.Exec(ctx, q, rule.CategoryID, rule.RuleType, rule.Operator, rule.Value,
-		rule.Currency, rule.Description, rule.IsActive, rule.EffectiveFrom, rule.EffectiveTo, rule.ID, rule.PolicyID)
+	q := `UPDATE expense_policy_rules SET category_id=$1,employee_category=$2,max_amount=$3,currency=$4,
+		requires_receipt=$5,requires_approval=$6,allowed_payment_methods=$7,
+		daily_allowance_category=$8,conditions=$9,priority=$10,is_active=$11,updated_at=NOW()
+		WHERE id=$12 AND policy_id=$13`
+	_, err := r.pool.Exec(ctx, q,
+		rule.CategoryID, rule.EmployeeCategory, rule.MaxAmount, rule.Currency,
+		rule.RequiresReceipt, rule.RequiresApproval, rule.AllowedPaymentMethods,
+		rule.DailyAllowanceCategory, rule.Conditions, rule.Priority, rule.IsActive, rule.ID, rule.PolicyID)
 	return repoErr("UpdateRule", err)
 }
 
@@ -100,25 +106,24 @@ func (r *PolicyRepo) DeleteRule(ctx context.Context, policyID, ruleID uuid.UUID)
 	return repoErr("DeleteRule", err)
 }
 
-func (r *PolicyRepo) GetActiveRules(ctx context.Context, companyID uuid.UUID, date time.Time) ([]domain.ExpensePolicyRule, error) {
-	q := `SELECT pr.id,pr.policy_id,pr.category_id,pr.rule_type,pr.operator,pr.value,pr.currency,pr.description,
-		pr.is_active,pr.effective_from,pr.effective_to,pr.created_by,pr.created_at,pr.updated_at
+func (r *PolicyRepo) GetActiveRules(ctx context.Context, companyID uuid.UUID) ([]domain.ExpensePolicyRule, error) {
+	q := `SELECT pr.id,pr.policy_id,pr.category_id,pr.employee_category,pr.max_amount,pr.currency,
+		pr.requires_receipt,pr.requires_approval,pr.allowed_payment_methods,
+		pr.daily_allowance_category,pr.conditions,pr.priority,pr.is_active,pr.created_at,pr.updated_at
 		FROM expense_policy_rules pr
 		INNER JOIN expense_policies p ON p.id=pr.policy_id
 		WHERE p.company_id=$1 AND pr.is_active=true AND p.is_active=true
-		AND (pr.effective_from IS NULL OR pr.effective_from<=$2)
-		AND (pr.effective_to IS NULL OR pr.effective_to>=$2)
 		ORDER BY pr.created_at`
-	rows, err := r.pool.Query(ctx, q, companyID, date)
+	rows, err := r.pool.Query(ctx, q, companyID)
 	if err != nil {
 		return nil, repoErr("GetActiveRules", err)
 	}
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpensePolicyRule, error) {
 		var rule domain.ExpensePolicyRule
-		err := row.Scan(&rule.ID, &rule.PolicyID, &rule.CategoryID, &rule.RuleType, &rule.Operator,
-			&rule.Value, &rule.Currency, &rule.Description, &rule.IsActive, &rule.EffectiveFrom, &rule.EffectiveTo,
-			&rule.CreatedBy, &rule.CreatedAt, &rule.UpdatedAt)
+		err := row.Scan(&rule.ID, &rule.PolicyID, &rule.CategoryID, &rule.EmployeeCategory, &rule.MaxAmount, &rule.Currency,
+			&rule.RequiresReceipt, &rule.RequiresApproval, &rule.AllowedPaymentMethods,
+			&rule.DailyAllowanceCategory, &rule.Conditions, &rule.Priority, &rule.IsActive, &rule.CreatedAt, &rule.UpdatedAt)
 		return rule, err
 	})
 }

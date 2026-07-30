@@ -1,19 +1,23 @@
 package http
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreateCandidate(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req application.CreateCandidateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.Create(c.Request.Context(), companyID, req)
+	data, err := h.CandidateSvc.Create(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -23,7 +27,9 @@ func (h *Handler) CreateCandidate(c *gin.Context) {
 
 func (h *Handler) ListCandidates(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.CandidateSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	status := c.Query("status")
+	source := c.Query("source")
+	data, err := h.CandidateSvc.List(c.Request.Context(), companyID, status, source)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -43,12 +49,12 @@ func (h *Handler) GetCandidate(c *gin.Context) {
 
 func (h *Handler) UpdateCandidate(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Candidate
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.CandidateSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -58,7 +64,14 @@ func (h *Handler) UpdateCandidate(c *gin.Context) {
 
 func (h *Handler) BlacklistCandidate(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.Blacklist(c.Request.Context(), companyID, c.Param("id")); err != nil {
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body")
+		return
+	}
+	if err := h.CandidateSvc.Blacklist(c.Request.Context(), companyID, c.Param("id"), req.Reason); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -76,8 +89,12 @@ func (h *Handler) UnblacklistCandidate(c *gin.Context) {
 
 func (h *Handler) SearchCandidates(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	skills := c.Query("skills")
-	data, err := h.CandidateSvc.Search(c.Request.Context(), companyID, skills)
+	skillsStr := c.Query("skills")
+	var skills []string
+	if skillsStr != "" {
+		skills = strings.Split(skillsStr, ",")
+	}
+	data, err := h.CandidateSvc.SearchBySkills(c.Request.Context(), companyID, skills)
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -97,7 +114,7 @@ func (h *Handler) ListCandidateEducation(c *gin.Context) {
 
 func (h *Handler) AddCandidateEducation(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateEducation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -112,22 +129,21 @@ func (h *Handler) AddCandidateEducation(c *gin.Context) {
 
 func (h *Handler) UpdateCandidateEducation(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateEducation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.UpdateEducation(c.Request.Context(), companyID, c.Param("eduId"), req)
-	if err != nil {
+	if err := h.CandidateSvc.UpdateEducation(c.Request.Context(), companyID, c.Param("eduId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "education updated"})
 }
 
 func (h *Handler) DeleteCandidateEducation(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.DeleteEducation(c.Request.Context(), companyID, c.Param("eduId")); err != nil {
+	if err := h.CandidateSvc.DeleteEducation(c.Request.Context(), companyID, "", c.Param("eduId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -146,7 +162,7 @@ func (h *Handler) ListCandidateExperience(c *gin.Context) {
 
 func (h *Handler) AddCandidateExperience(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateExperience
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -161,22 +177,21 @@ func (h *Handler) AddCandidateExperience(c *gin.Context) {
 
 func (h *Handler) UpdateCandidateExperience(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateExperience
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.UpdateExperience(c.Request.Context(), companyID, c.Param("expId"), req)
-	if err != nil {
+	if err := h.CandidateSvc.UpdateExperience(c.Request.Context(), companyID, c.Param("expId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "experience updated"})
 }
 
 func (h *Handler) DeleteCandidateExperience(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.DeleteExperience(c.Request.Context(), companyID, c.Param("expId")); err != nil {
+	if err := h.CandidateSvc.DeleteExperience(c.Request.Context(), companyID, "", c.Param("expId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -195,7 +210,7 @@ func (h *Handler) ListCandidateSkills(c *gin.Context) {
 
 func (h *Handler) AddCandidateSkill(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateSkill
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -210,22 +225,21 @@ func (h *Handler) AddCandidateSkill(c *gin.Context) {
 
 func (h *Handler) UpdateCandidateSkill(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateSkill
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.UpdateSkill(c.Request.Context(), companyID, c.Param("skillId"), req)
-	if err != nil {
+	if err := h.CandidateSvc.UpdateSkill(c.Request.Context(), companyID, c.Param("skillId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "skill updated"})
 }
 
 func (h *Handler) DeleteCandidateSkill(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.DeleteSkill(c.Request.Context(), companyID, c.Param("skillId")); err != nil {
+	if err := h.CandidateSvc.DeleteSkill(c.Request.Context(), companyID, "", c.Param("skillId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -244,7 +258,7 @@ func (h *Handler) ListCandidateCertifications(c *gin.Context) {
 
 func (h *Handler) AddCandidateCertification(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateCertification
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -259,7 +273,7 @@ func (h *Handler) AddCandidateCertification(c *gin.Context) {
 
 func (h *Handler) DeleteCandidateCertification(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.DeleteCertification(c.Request.Context(), companyID, c.Param("certId")); err != nil {
+	if err := h.CandidateSvc.DeleteCertification(c.Request.Context(), companyID, "", c.Param("certId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -278,7 +292,7 @@ func (h *Handler) ListCandidateLanguages(c *gin.Context) {
 
 func (h *Handler) AddCandidateLanguage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateLanguage
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -293,22 +307,21 @@ func (h *Handler) AddCandidateLanguage(c *gin.Context) {
 
 func (h *Handler) UpdateCandidateLanguage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateLanguage
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.CandidateSvc.UpdateLanguage(c.Request.Context(), companyID, c.Param("langId"), req)
-	if err != nil {
+	if err := h.CandidateSvc.UpdateLanguage(c.Request.Context(), companyID, c.Param("langId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "language updated"})
 }
 
 func (h *Handler) DeleteCandidateLanguage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.CandidateSvc.DeleteLanguage(c.Request.Context(), companyID, c.Param("langId")); err != nil {
+	if err := h.CandidateSvc.DeleteLanguage(c.Request.Context(), companyID, "", c.Param("langId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -327,7 +340,7 @@ func (h *Handler) ListCandidateDocuments(c *gin.Context) {
 
 func (h *Handler) AddCandidateDocument(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.CandidateDocument
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return

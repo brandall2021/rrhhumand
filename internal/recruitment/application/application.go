@@ -97,7 +97,8 @@ func (s *ApplicationService) MoveStage(ctx context.Context, companyID, id, toSta
 		AutoTransition: false,
 		CreatedAt:      now,
 	}
-	return s.applicationRepo.AddStageHistory(ctx, history)
+	_, err = s.applicationRepo.AddStageHistory(ctx, history)
+	return err
 }
 
 func (s *ApplicationService) Reject(ctx context.Context, companyID, id, reasonID, reasonText string) error {

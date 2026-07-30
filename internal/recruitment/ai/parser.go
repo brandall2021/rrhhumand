@@ -2,7 +2,6 @@ package ai
 
 import (
 	"context"
-	"time"
 )
 
 type ParsedCV struct {

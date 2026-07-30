@@ -62,13 +62,18 @@ func (r *ReceiptRepo) ListTemplates(ctx context.Context, companyID uuid.UUID) ([
 		return nil, repoErr("ListTemplates", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ReceiptTemplate, error) {
+	var result []domain.ReceiptTemplate
+	for rows.Next() {
 		var t domain.ReceiptTemplate
-		err := row.Scan(&t.ID, &t.CompanyID, &t.Name, &t.Description, &t.TemplateHTML, &t.TemplateCSS,
+		err := rows.Scan(&t.ID, &t.CompanyID, &t.Name, &t.Description, &t.TemplateHTML, &t.TemplateCSS,
 			&t.Orientation, &t.PaperSize, &t.ShowLogo, &t.ShowSignature, &t.ShowQR, &t.ShowBarcode, &t.FontFamily, &t.FontSize,
 			&t.PrimaryColor, &t.SecondaryColor, &t.MarginTop, &t.MarginBottom, &t.MarginLeft, &t.MarginRight, &t.IsDefault, &t.IsActive, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt)
-		return t, err
-	})
+		if err != nil {
+			return nil, repoErr("ListTemplates", err)
+		}
+		result = append(result, t)
+	}
+	return result, nil
 }
 
 func (r *ReceiptRepo) UpdateTemplate(ctx context.Context, t *domain.ReceiptTemplate) error {
@@ -111,7 +116,11 @@ func (r *ReceiptRepo) GetReceipt(ctx context.Context, companyID, id uuid.UUID) (
 		emailed_at,storage_path,generated_by,generated_at,created_at,updated_at
 		FROM payroll_receipts WHERE id=$1 AND company_id=$2`
 	row := r.pool.QueryRow(ctx, q, id, companyID)
-	return scanReceipt(row)
+	r2, err := scanReceipt(row)
+	if err != nil {
+		return nil, repoErr("GetReceipt", err)
+	}
+	return &r2, nil
 }
 
 func (r *ReceiptRepo) ListReceipts(ctx context.Context, companyID uuid.UUID, runID *uuid.UUID, employeeID *uuid.UUID, limit, offset int) ([]domain.Receipt, error) {
@@ -148,9 +157,15 @@ func (r *ReceiptRepo) ListReceipts(ctx context.Context, companyID uuid.UUID, run
 		return nil, repoErr("ListReceipts", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.Receipt, error) {
-		return scanReceipt(row)
-	})
+	var result []domain.Receipt
+	for rows.Next() {
+		r, err := scanReceipt(rows)
+		if err != nil {
+			return nil, repoErr("ListReceipts", err)
+		}
+		result = append(result, r)
+	}
+	return result, nil
 }
 
 func (r *ReceiptRepo) UpdateReceiptStatus(ctx context.Context, id uuid.UUID, status string, fields map[string]any) error {
@@ -193,14 +208,19 @@ func (r *ReceiptRepo) ListReceiptItems(ctx context.Context, receiptID uuid.UUID)
 		return nil, repoErr("ListReceiptItems", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ReceiptItem, error) {
+	var result []domain.ReceiptItem
+	for rows.Next() {
 		var it domain.ReceiptItem
-		err := row.Scan(&it.ID, &it.ReceiptID, &it.ConceptCode, &it.ConceptName, &it.Quantity, &it.UnitValue, &it.BaseAmount, &it.Rate, &it.Amount, &it.IsRemunerative, &it.IsDeduction, &it.IsContribution, &it.SortOrder, &it.CreatedAt)
-		return it, err
-	})
+		err := rows.Scan(&it.ID, &it.ReceiptID, &it.ConceptCode, &it.ConceptName, &it.Quantity, &it.UnitValue, &it.BaseAmount, &it.Rate, &it.Amount, &it.IsRemunerative, &it.IsDeduction, &it.IsContribution, &it.SortOrder, &it.CreatedAt)
+		if err != nil {
+			return nil, repoErr("ListReceiptItems", err)
+		}
+		result = append(result, it)
+	}
+	return result, nil
 }
 
-func scanReceipt(row pgx.CollectableRow) (domain.Receipt, error) {
+func scanReceipt(row pgx.Row) (domain.Receipt, error) {
 	var r domain.Receipt
 	err := row.Scan(&r.ID, &r.CompanyID, &r.RunID, &r.RunEmployeeID, &r.EmployeeID, &r.TemplateID,
 		&r.ReceiptNumber, &r.CUIT, &r.EmployeeCUIL, &r.PeriodName, &r.PeriodStart, &r.PeriodEnd, &r.PaymentDate,

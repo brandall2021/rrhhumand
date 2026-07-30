@@ -23,6 +23,7 @@ type Travel struct {
 	CostCenterID    *uuid.UUID      `json:"cost_center_id,omitempty"`
 	ProjectID       *uuid.UUID      `json:"project_id,omitempty"`
 	RejectionReason *string         `json:"rejection_reason,omitempty"`
+	Notes           *string         `json:"notes,omitempty"`
 	CreatedBy       uuid.UUID       `json:"created_by"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
@@ -33,6 +34,7 @@ type TravelParticipant struct {
 	TravelID   uuid.UUID `json:"travel_id"`
 	EmployeeID uuid.UUID `json:"employee_id"`
 	Role       string    `json:"role"`
+	Notes      *string   `json:"notes,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
@@ -54,9 +56,11 @@ type ExpenseReport struct {
 	SubmittedAt        *time.Time      `json:"submitted_at,omitempty"`
 	ApprovedAt         *time.Time      `json:"approved_at,omitempty"`
 	PaidAt             *time.Time      `json:"paid_at,omitempty"`
+	RejectedAt         *time.Time      `json:"rejected_at,omitempty"`
 	RejectionReason    *string         `json:"rejection_reason,omitempty"`
 	Observation        *string         `json:"observation,omitempty"`
-	CreatedBy          uuid.UUID       `json:"created_by"`
+	Notes              *string         `json:"notes,omitempty"`
+	CreatedBy       uuid.UUID       `json:"created_by"`
 	CreatedAt          time.Time       `json:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at"`
 }
@@ -96,6 +100,7 @@ type ExpenseReimbursement struct {
 	PayrollRunID    *uuid.UUID      `json:"payroll_run_id,omitempty"`
 	PaidAt          *time.Time      `json:"paid_at,omitempty"`
 	RejectionReason *string         `json:"rejection_reason,omitempty"`
+	Notes           *string         `json:"notes,omitempty"`
 	IdempotencyKey  *string         `json:"idempotency_key,omitempty"`
 	CreatedBy       uuid.UUID       `json:"created_by"`
 	CreatedAt       time.Time       `json:"created_at"`

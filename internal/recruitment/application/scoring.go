@@ -136,9 +136,9 @@ func (s *ScoringService) ListCriteria(ctx context.Context, companyID, modelID st
 	return s.scoringRepo.ListCriteria(ctx, modelID)
 }
 
-func (s *ScoringService) ScoreCandidate(ctx context.Context, candidateID, positionID string) (*domain.MatchingResult, error) {
+func (s *ScoringService) ScoreCandidate(ctx context.Context, companyID, candidateID, positionID string) (*domain.MatchingResult, error) {
 	const op = "ScoreCandidate"
-	result, err := s.matchingEngine.Match(ctx, candidateID, positionID)
+	result, err := s.matchingEngine.Match(ctx, companyID, candidateID, positionID)
 	if err != nil {
 		return nil, svcErr(op, err)
 	}

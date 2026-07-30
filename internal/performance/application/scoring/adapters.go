@@ -32,8 +32,8 @@ func (s *objectiveScorer) CalculateObjectiveScore(ctx context.Context, companyID
 	weightedScore := 0.0
 	for _, o := range objectives {
 		w := 1.0
-		if o.Weight != nil && *o.Weight > 0 {
-			w = *o.Weight
+		if o.Weight > 0 {
+			w = o.Weight
 		}
 		score := 0.0
 		if o.CurrentValue != nil && o.TargetValue != nil && *o.TargetValue > 0 {
@@ -114,8 +114,8 @@ func (s *evaluationScorer) CalculateEvaluatorScore(ctx context.Context, companyI
 	total := 0.0
 	count := 0
 	for _, e := range evaluations {
-		if e.FinalScore != nil {
-			total += *e.FinalScore
+		if e.OverallScore != nil {
+			total += *e.OverallScore
 			count++
 		}
 	}

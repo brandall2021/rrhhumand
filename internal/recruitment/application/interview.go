@@ -98,12 +98,12 @@ func (s *InterviewService) Update(ctx context.Context, companyID, id string, req
 
 func (s *InterviewService) Cancel(ctx context.Context, companyID, id string) error {
 	const op = "CancelInterview"
-	return s.interviewRepo.UpdateStatus(ctx, companyID, id, domain.IntStatusCancelled)
+	return s.interviewRepo.UpdateStatus(ctx, companyID, id, string(domain.IntStatusCancelled))
 }
 
 func (s *InterviewService) Complete(ctx context.Context, companyID, id string) error {
 	const op = "CompleteInterview"
-	return s.interviewRepo.UpdateStatus(ctx, companyID, id, domain.IntStatusCompleted)
+	return s.interviewRepo.UpdateStatus(ctx, companyID, id, string(domain.IntStatusCompleted))
 }
 
 func (s *InterviewService) AddPanelMember(ctx context.Context, companyID, interviewID string, member domain.InterviewPanelMember) (*domain.InterviewPanelMember, error) {

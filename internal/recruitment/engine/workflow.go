@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"time"
 
 	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/recruitment/repository"
@@ -21,7 +20,7 @@ func NewWorkflowEngine(workflowRepo *repository.WorkflowRepo, applicationRepo *r
 }
 
 func (e *WorkflowEngine) EvaluateTransition(ctx context.Context, application domain.Application, toStageID string) (bool, error) {
-	workflows, err := e.workflowRepo.FindByEntityType(ctx, application.CompanyID, domain.WfEntityApplication)
+	workflows, err := e.workflowRepo.List(ctx, application.CompanyID, string(domain.WfEntityApplication))
 	if err != nil {
 		return false, err
 	}
@@ -53,13 +52,13 @@ func (e *WorkflowEngine) EvaluateTransition(ctx context.Context, application dom
 	return true, nil
 }
 
-func (e *WorkflowEngine) AutoAdvance(ctx context.Context, applicationID string) error {
-	app, err := e.applicationRepo.GetByID(ctx, applicationID)
+func (e *WorkflowEngine) AutoAdvance(ctx context.Context, companyID, applicationID string) error {
+	app, err := e.applicationRepo.GetByID(ctx, companyID, applicationID)
 	if err != nil {
 		return err
 	}
 
-	workflows, err := e.workflowRepo.FindByEntityType(ctx, app.CompanyID, domain.WfEntityApplication)
+	workflows, err := e.workflowRepo.List(ctx, app.CompanyID, string(domain.WfEntityApplication))
 	if err != nil {
 		return err
 	}
@@ -78,9 +77,7 @@ func (e *WorkflowEngine) AutoAdvance(ctx context.Context, applicationID string) 
 			if stage.StageID == *app.CurrentStageID && stage.AutoAdvance {
 				nextStage := e.findNextStage(stages, stage.SortOrder)
 				if nextStage != nil {
-					app.CurrentStageID = &nextStage.StageID
-					app.UpdatedAt = time.Now()
-					return e.applicationRepo.Update(ctx, app)
+					return e.applicationRepo.UpdateStage(ctx, companyID, applicationID, nextStage.StageID)
 				}
 			}
 		}

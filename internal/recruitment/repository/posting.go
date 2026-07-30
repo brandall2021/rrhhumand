@@ -185,6 +185,39 @@ func (r *PostingRepo) DeleteScreeningQuestion(ctx context.Context, id string) er
 	return err
 }
 
+func (r *PostingRepo) ListPublic(ctx context.Context) ([]domain.Posting, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, company_id, position_id, requisition_id, title, description, requirements, responsibilities, benefits, employment_type, work_mode, location, salary_min, salary_max, currency, published_at, closing_at, is_public, external_url, status, created_at, updated_at
+		 FROM job_postings WHERE status='PUBLISHED' AND is_public=TRUE ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var postings []domain.Posting
+	for rows.Next() {
+		var p domain.Posting
+		rows.Scan(&p.ID, &p.CompanyID, &p.PositionID, &p.RequisitionID, &p.Title, &p.Description,
+			&p.Requirements, &p.Responsibilities, &p.Benefits, &p.EmploymentType, &p.WorkMode,
+			&p.Location, &p.SalaryMin, &p.SalaryMax, &p.Currency, &p.PublishedAt, &p.ClosingAt,
+			&p.IsPublic, &p.ExternalURL, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		postings = append(postings, p)
+	}
+	return postings, nil
+}
+
+func (r *PostingRepo) GetPublicByID(ctx context.Context, id string) (*domain.Posting, error) {
+	p := &domain.Posting{}
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, company_id, position_id, requisition_id, title, description, requirements, responsibilities, benefits, employment_type, work_mode, location, salary_min, salary_max, currency, published_at, closing_at, is_public, external_url, status, created_at, updated_at
+		 FROM job_postings WHERE id=$1 AND status='PUBLISHED' AND is_public=TRUE`, id,
+	).Scan(&p.ID, &p.CompanyID, &p.PositionID, &p.RequisitionID, &p.Title, &p.Description,
+		&p.Requirements, &p.Responsibilities, &p.Benefits, &p.EmploymentType, &p.WorkMode,
+		&p.Location, &p.SalaryMin, &p.SalaryMax, &p.Currency, &p.PublishedAt, &p.ClosingAt,
+		&p.IsPublic, &p.ExternalURL, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+	return p, err
+}
+
 func (r *PostingRepo) ListScreeningQuestions(ctx context.Context, postingID string) ([]domain.PostingScreeningQuestion, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, posting_id, question, question_type, options, required, sort_order, active, created_at

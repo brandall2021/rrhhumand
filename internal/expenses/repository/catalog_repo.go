@@ -26,43 +26,35 @@ func NewCatalogRepo(pool *pgxpool.Pool) *CatalogRepo {
 }
 
 func (r *CatalogRepo) CreateCategory(ctx context.Context, c *domain.ExpenseCategory) error {
-	q := `INSERT INTO expense_categories (id,company_id,name,description,parent_id,is_active,created_by)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)`
-	_, err := r.pool.Exec(ctx, q, c.ID, c.CompanyID, c.Name, c.Description, c.ParentID, c.IsActive, c.CreatedBy)
+	q := `INSERT INTO expense_categories (id,company_id,code,name,description,parent_id,requires_receipt,is_active,sort_order)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
+	_, err := r.pool.Exec(ctx, q, c.ID, c.CompanyID, c.Code, c.Name, c.Description, c.ParentID, c.RequiresReceipt, c.IsActive, c.SortOrder)
 	return repoErr("CreateCategory", err)
 }
 
 func (r *CatalogRepo) GetCategory(ctx context.Context, companyID, id uuid.UUID) (*domain.ExpenseCategory, error) {
-	q := `SELECT id,company_id,name,description,parent_id,is_active,created_by,created_at,updated_at
+	q := `SELECT id,company_id,code,name,description,parent_id,requires_receipt,is_active,sort_order,created_at,updated_at
 		FROM expense_categories WHERE id=$1 AND company_id=$2`
 	row := r.pool.QueryRow(ctx, q, id, companyID)
 	var c domain.ExpenseCategory
-	err := row.Scan(&c.ID, &c.CompanyID, &c.Name, &c.Description, &c.ParentID, &c.IsActive, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt)
+	err := row.Scan(&c.ID, &c.CompanyID, &c.Code, &c.Name, &c.Description, &c.ParentID, &c.RequiresReceipt, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		return nil, repoErr("GetCategory", err)
 	}
 	return &c, nil
 }
 
-func (r *CatalogRepo) ListCategories(ctx context.Context, companyID uuid.UUID, parentID *uuid.UUID) ([]domain.ExpenseCategory, error) {
-	q := `SELECT id,company_id,name,description,parent_id,is_active,created_by,created_at,updated_at
-		FROM expense_categories WHERE company_id=$1`
-	args := []any{companyID}
-	n := 2
-	if parentID != nil {
-		q += fmt.Sprintf(" AND parent_id=$%d", n)
-		args = append(args, *parentID)
-		n++
-	}
-	q += " ORDER BY name"
-	rows, err := r.pool.Query(ctx, q, args...)
+func (r *CatalogRepo) ListCategories(ctx context.Context, companyID uuid.UUID) ([]domain.ExpenseCategory, error) {
+	q := `SELECT id,company_id,code,name,description,parent_id,requires_receipt,is_active,sort_order,created_at,updated_at
+		FROM expense_categories WHERE company_id=$1 ORDER BY name`
+	rows, err := r.pool.Query(ctx, q, companyID)
 	if err != nil {
 		return nil, repoErr("ListCategories", err)
 	}
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpenseCategory, error) {
 		var c domain.ExpenseCategory
-		err := row.Scan(&c.ID, &c.CompanyID, &c.Name, &c.Description, &c.ParentID, &c.IsActive, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt)
+		err := row.Scan(&c.ID, &c.CompanyID, &c.Code, &c.Name, &c.Description, &c.ParentID, &c.RequiresReceipt, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt)
 		return c, err
 	})
 }
@@ -80,14 +72,14 @@ func (r *CatalogRepo) DeleteCategory(ctx context.Context, companyID, id uuid.UUI
 }
 
 func (r *CatalogRepo) CreatePaymentMethod(ctx context.Context, m *domain.ExpensePaymentMethod) error {
-	q := `INSERT INTO expense_payment_methods (id,company_id,name,description,is_active,created_by)
-		VALUES ($1,$2,$3,$4,$5,$6)`
-	_, err := r.pool.Exec(ctx, q, m.ID, m.CompanyID, m.Name, m.Description, m.IsActive, m.CreatedBy)
+	q := `INSERT INTO expense_payment_methods (id,company_id,code,name,is_corporate,requires_receipt,is_active)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)`
+	_, err := r.pool.Exec(ctx, q, m.ID, m.CompanyID, m.Code, m.Name, m.IsCorporate, m.RequiresReceipt, m.IsActive)
 	return repoErr("CreatePaymentMethod", err)
 }
 
 func (r *CatalogRepo) ListPaymentMethods(ctx context.Context, companyID uuid.UUID) ([]domain.ExpensePaymentMethod, error) {
-	q := `SELECT id,company_id,name,description,is_active,created_by,created_at,updated_at
+	q := `SELECT id,company_id,code,name,is_corporate,requires_receipt,is_active,created_at
 		FROM expense_payment_methods WHERE company_id=$1 ORDER BY name`
 	rows, err := r.pool.Query(ctx, q, companyID)
 	if err != nil {
@@ -96,14 +88,14 @@ func (r *CatalogRepo) ListPaymentMethods(ctx context.Context, companyID uuid.UUI
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpensePaymentMethod, error) {
 		var m domain.ExpensePaymentMethod
-		err := row.Scan(&m.ID, &m.CompanyID, &m.Name, &m.Description, &m.IsActive, &m.CreatedBy, &m.CreatedAt, &m.UpdatedAt)
+		err := row.Scan(&m.ID, &m.CompanyID, &m.Code, &m.Name, &m.IsCorporate, &m.RequiresReceipt, &m.IsActive, &m.CreatedAt)
 		return m, err
 	})
 }
 
 func (r *CatalogRepo) UpdatePaymentMethod(ctx context.Context, m *domain.ExpensePaymentMethod) error {
-	q := `UPDATE expense_payment_methods SET name=$1,description=$2,is_active=$3,updated_at=NOW()
-		WHERE id=$4 AND company_id=$5`
-	_, err := r.pool.Exec(ctx, q, m.Name, m.Description, m.IsActive, m.ID, m.CompanyID)
+	q := `UPDATE expense_payment_methods SET name=$1,is_corporate=$2,requires_receipt=$3,is_active=$4
+		WHERE id=$5 AND company_id=$6`
+	_, err := r.pool.Exec(ctx, q, m.Name, m.IsCorporate, m.RequiresReceipt, m.IsActive, m.ID, m.CompanyID)
 	return repoErr("UpdatePaymentMethod", err)
 }

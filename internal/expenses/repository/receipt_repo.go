@@ -18,18 +18,18 @@ func NewReceiptRepo(pool *pgxpool.Pool) *ReceiptRepo {
 }
 
 func (r *ReceiptRepo) Create(ctx context.Context, rec *domain.ExpenseReceipt) error {
-	q := `INSERT INTO expense_receipts (id,expense_id,file_name,file_path,file_size,mime_type,uploaded_by)
+	q := `INSERT INTO expense_receipts (id,expense_id,storage_key,filename,size,mime_type,uploaded_by)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)`
-	_, err := r.pool.Exec(ctx, q, rec.ID, rec.ExpenseID, rec.FileName, rec.FilePath, rec.FileSize, rec.MimeType, rec.UploadedBy)
+	_, err := r.pool.Exec(ctx, q, rec.ID, rec.ExpenseID, rec.StorageKey, rec.Filename, rec.Size, rec.MimeType, rec.UploadedBy)
 	return repoErr("ReceiptRepo.Create", err)
 }
 
 func (r *ReceiptRepo) Get(ctx context.Context, id uuid.UUID) (*domain.ExpenseReceipt, error) {
-	q := `SELECT id,expense_id,file_name,file_path,file_size,mime_type,uploaded_by,created_at
+	q := `SELECT id,expense_id,storage_key,filename,size,mime_type,uploaded_by,uploaded_at
 		FROM expense_receipts WHERE id=$1`
 	row := r.pool.QueryRow(ctx, q, id)
 	var rec domain.ExpenseReceipt
-	err := row.Scan(&rec.ID, &rec.ExpenseID, &rec.FileName, &rec.FilePath, &rec.FileSize, &rec.MimeType, &rec.UploadedBy, &rec.CreatedAt)
+	err := row.Scan(&rec.ID, &rec.ExpenseID, &rec.StorageKey, &rec.Filename, &rec.Size, &rec.MimeType, &rec.UploadedBy, &rec.UploadedAt)
 	if err != nil {
 		return nil, repoErr("ReceiptRepo.Get", err)
 	}
@@ -37,8 +37,8 @@ func (r *ReceiptRepo) Get(ctx context.Context, id uuid.UUID) (*domain.ExpenseRec
 }
 
 func (r *ReceiptRepo) ListByExpense(ctx context.Context, expenseID uuid.UUID) ([]domain.ExpenseReceipt, error) {
-	q := `SELECT id,expense_id,file_name,file_path,file_size,mime_type,uploaded_by,created_at
-		FROM expense_receipts WHERE expense_id=$1 ORDER BY created_at`
+	q := `SELECT id,expense_id,storage_key,filename,size,mime_type,uploaded_by,uploaded_at
+		FROM expense_receipts WHERE expense_id=$1 ORDER BY uploaded_at`
 	rows, err := r.pool.Query(ctx, q, expenseID)
 	if err != nil {
 		return nil, repoErr("ReceiptRepo.ListByExpense", err)
@@ -46,7 +46,7 @@ func (r *ReceiptRepo) ListByExpense(ctx context.Context, expenseID uuid.UUID) ([
 	defer rows.Close()
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ExpenseReceipt, error) {
 		var rec domain.ExpenseReceipt
-		err := row.Scan(&rec.ID, &rec.ExpenseID, &rec.FileName, &rec.FilePath, &rec.FileSize, &rec.MimeType, &rec.UploadedBy, &rec.CreatedAt)
+		err := row.Scan(&rec.ID, &rec.ExpenseID, &rec.StorageKey, &rec.Filename, &rec.Size, &rec.MimeType, &rec.UploadedBy, &rec.UploadedAt)
 		return rec, err
 	})
 }

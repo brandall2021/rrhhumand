@@ -31,13 +31,13 @@ func NewMatchingEngine(
 	}
 }
 
-func (e *MatchingEngine) Match(ctx context.Context, candidateID, positionID string) (*domain.MatchingResult, error) {
-	candidate, err := e.candidateRepo.GetByID(ctx, candidateID)
+func (e *MatchingEngine) Match(ctx context.Context, companyID, candidateID, positionID string) (*domain.MatchingResult, error) {
+	candidate, err := e.candidateRepo.GetByID(ctx, companyID, candidateID)
 	if err != nil {
 		return nil, err
 	}
 
-	position, err := e.positionRepo.GetByID(ctx, positionID)
+	position, err := e.positionRepo.GetByID(ctx, companyID, positionID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +70,8 @@ func (e *MatchingEngine) Match(ctx context.Context, candidateID, positionID stri
 	return result, nil
 }
 
-func (e *MatchingEngine) AutoMatch(ctx context.Context, positionID string) ([]*domain.MatchingResult, error) {
-	position, err := e.positionRepo.GetByID(ctx, positionID)
+func (e *MatchingEngine) AutoMatch(ctx context.Context, companyID, positionID string) ([]*domain.MatchingResult, error) {
+	position, err := e.positionRepo.GetByID(ctx, companyID, positionID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (e *MatchingEngine) AutoMatch(ctx context.Context, positionID string) ([]*d
 		criteria = []domain.ScoringCriterion{}
 	}
 
-	candidates, err := e.candidateRepo.List(ctx, position.CompanyID, nil)
+	candidates, err := e.candidateRepo.List(ctx, position.CompanyID, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (e *MatchingEngine) AutoMatch(ctx context.Context, positionID string) ([]*d
 }
 
 func (e *MatchingEngine) getDefaultCriteria(ctx context.Context, companyID string) ([]domain.ScoringCriterion, error) {
-	models, err := e.scoringRepo.List(ctx, companyID)
+	models, err := e.scoringRepo.ListScoringModels(ctx, companyID)
 	if err != nil {
 		return nil, err
 	}

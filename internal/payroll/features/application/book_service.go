@@ -94,6 +94,14 @@ func (s *BookService) GetBookExports(ctx context.Context, companyID uuid.UUID) (
 	return s.bookRepo.ListExports(ctx, companyID, 0, 0)
 }
 
+func (s *BookService) GetEntry(ctx context.Context, companyID, id uuid.UUID) (*domain.BookEntry, error) {
+	return s.bookRepo.GetEntry(ctx, companyID, id)
+}
+
+func (s *BookService) GetExport(ctx context.Context, companyID, id uuid.UUID) (*domain.BookExport, error) {
+	return s.bookRepo.GetExport(ctx, companyID, id)
+}
+
 func (s *BookService) GetBookSummary(ctx context.Context, runID uuid.UUID) (*repository.BookSummary, error) {
 	return s.bookRepo.GetBookSummary(ctx, runID)
 }

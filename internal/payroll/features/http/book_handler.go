@@ -13,7 +13,7 @@ func (h *Handler) ListEntries(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid run_id"})
 		return
 	}
-	list, err := h.BookSvc.ListEntries(c.Request.Context(), runID)
+	list, err := h.BookSvc.GetBookEntries(c.Request.Context(), companyID(c), runID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,7 +49,7 @@ func (h *Handler) GenerateEntries(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid run_id"})
 		return
 	}
-	entries, err := h.BookSvc.GenerateEntries(c.Request.Context(), companyID(c), runID, userID(c))
+	entries, err := h.BookSvc.GenerateBookEntries(c.Request.Context(), companyID(c), runID, userID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -58,7 +58,7 @@ func (h *Handler) GenerateEntries(c *gin.Context) {
 }
 
 func (h *Handler) ListExportsBook(c *gin.Context) {
-	list, err := h.BookSvc.ListExports(c.Request.Context(), companyID(c))
+	list, err := h.BookSvc.GetBookExports(c.Request.Context(), companyID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -97,7 +97,7 @@ func (h *Handler) ExportBook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid period_id"})
 		return
 	}
-	e, err := h.BookSvc.ExportBook(c.Request.Context(), companyID(c), periodID, req.Year, req.Month, req.Format, userID(c))
+	e, err := h.BookSvc.ExportBook(c.Request.Context(), companyID(c), &periodID, req.Year, req.Month, req.Format, userID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

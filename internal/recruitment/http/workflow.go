@@ -2,18 +2,19 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/domain"
 	"github.com/rrhhumand/api/internal/tenant"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
 func (h *Handler) CreateWorkflow(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Workflow
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.WorkflowSvc.Create(c.Request.Context(), companyID, req)
+	data, err := h.WorkflowSvc.Create(c.Request.Context(), companyID, &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -23,7 +24,7 @@ func (h *Handler) CreateWorkflow(c *gin.Context) {
 
 func (h *Handler) ListWorkflows(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	data, err := h.WorkflowSvc.List(c.Request.Context(), companyID, c.Request.URL.Query())
+	data, err := h.WorkflowSvc.List(c.Request.Context(), companyID, c.Query("entity_type"))
 	if err != nil {
 		response.InternalError(c, err.Error())
 		return
@@ -43,12 +44,12 @@ func (h *Handler) GetWorkflow(c *gin.Context) {
 
 func (h *Handler) UpdateWorkflow(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.Workflow
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.WorkflowSvc.Update(c.Request.Context(), companyID, c.Param("id"), req)
+	data, err := h.WorkflowSvc.Update(c.Request.Context(), companyID, c.Param("id"), &req)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -86,7 +87,7 @@ func (h *Handler) ListWorkflowStages(c *gin.Context) {
 
 func (h *Handler) AddWorkflowStage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.WorkflowStage
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -101,7 +102,7 @@ func (h *Handler) AddWorkflowStage(c *gin.Context) {
 
 func (h *Handler) RemoveWorkflowStage(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.WorkflowSvc.RemoveStage(c.Request.Context(), companyID, c.Param("stageId")); err != nil {
+	if err := h.WorkflowSvc.RemoveStage(c.Request.Context(), companyID, c.Param("id"), c.Param("stageId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -110,12 +111,14 @@ func (h *Handler) RemoveWorkflowStage(c *gin.Context) {
 
 func (h *Handler) ReorderWorkflowStages(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req struct {
+		StageIDs []string `json:"stage_ids"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	if err := h.WorkflowSvc.ReorderStages(c.Request.Context(), companyID, c.Param("id"), req); err != nil {
+	if err := h.WorkflowSvc.ReorderStages(c.Request.Context(), companyID, c.Param("id"), req.StageIDs); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -134,7 +137,7 @@ func (h *Handler) ListWorkflowRules(c *gin.Context) {
 
 func (h *Handler) AddWorkflowRule(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.WorkflowRule
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
@@ -149,22 +152,21 @@ func (h *Handler) AddWorkflowRule(c *gin.Context) {
 
 func (h *Handler) UpdateWorkflowRule(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	var req map[string]any
+	var req domain.WorkflowRule
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.WorkflowSvc.UpdateRule(c.Request.Context(), companyID, c.Param("ruleId"), req)
-	if err != nil {
+	if err := h.WorkflowSvc.UpdateRule(c.Request.Context(), companyID, c.Param("ruleId"), req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.Success(c, data)
+	response.Success(c, gin.H{"message": "rule updated"})
 }
 
 func (h *Handler) DeleteWorkflowRule(c *gin.Context) {
 	companyID := tenant.GetCompanyID(c)
-	if err := h.WorkflowSvc.DeleteRule(c.Request.Context(), companyID, c.Param("ruleId")); err != nil {
+	if err := h.WorkflowSvc.DeleteRule(c.Request.Context(), companyID, c.Param("id"), c.Param("ruleId")); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

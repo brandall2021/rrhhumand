@@ -18,7 +18,7 @@ func NewAssignmentRepo(pool *pgxpool.Pool) *AssignmentRepo {
 	return &AssignmentRepo{pool: pool}
 }
 
-func scanEmployeeBenefit(row pgx.CollectableRow) (domain.EmployeeBenefit, error) {
+func scanEmployeeBenefit(row pgx.Row) (domain.EmployeeBenefit, error) {
 	var eb domain.EmployeeBenefit
 	err := row.Scan(&eb.ID, &eb.CompanyID, &eb.EmployeeID, &eb.BenefitID, &eb.PlanID, &eb.ProviderID,
 		&eb.Status, &eb.EnrollmentDate, &eb.StartDate, &eb.EndDate, &eb.CancellationDate, &eb.CancellationReason,
@@ -95,7 +95,22 @@ func (r *AssignmentRepo) List(ctx context.Context, companyID, employeeID, benefi
 		return nil, repoErr("List", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanEmployeeBenefit)
+	var result []domain.EmployeeBenefit
+	for rows.Next() {
+		var eb domain.EmployeeBenefit
+		err := rows.Scan(&eb.ID, &eb.CompanyID, &eb.EmployeeID, &eb.BenefitID, &eb.PlanID, &eb.ProviderID,
+			&eb.Status, &eb.EnrollmentDate, &eb.StartDate, &eb.EndDate, &eb.CancellationDate, &eb.CancellationReason,
+			&eb.AutoRenew, &eb.RenewalDate, &eb.CoverageLevel, &eb.Dependents, &eb.EmergencyContact,
+			&eb.BeneficiaryInfo, &eb.EmployeeCost, &eb.EmployerCost, &eb.Currency,
+			&eb.PayrollDeductionEnabled, &eb.PayrollDeductionAmount, &eb.ExternalMemberID,
+			&eb.ExternalPolicyNumber, &eb.ExternalGroupNumber, &eb.Documents, &eb.Notes,
+			&eb.Source, &eb.EnrolledBy, &eb.EnrolledAt, &eb.CreatedAt, &eb.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("List", err)
+		}
+		result = append(result, eb)
+	}
+	return result, nil
 }
 
 func (r *AssignmentRepo) Update(ctx context.Context, eb *domain.EmployeeBenefit) error {
@@ -149,15 +164,20 @@ func (r *AssignmentRepo) ListHistory(ctx context.Context, employeeBenefitID, emp
 		return nil, repoErr("ListHistory", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.EmployeeBenefitHistory, error) {
+	var result []domain.EmployeeBenefitHistory
+	for rows.Next() {
 		var h domain.EmployeeBenefitHistory
-		err := row.Scan(&h.ID, &h.EmployeeBenefitID, &h.EmployeeID, &h.BenefitID, &h.Action,
+		err := rows.Scan(&h.ID, &h.EmployeeBenefitID, &h.EmployeeID, &h.BenefitID, &h.Action,
 			&h.PreviousValue, &h.NewValue, &h.ChangeReason, &h.ChangedBy, &h.ChangedAt)
-		return h, err
-	})
+		if err != nil {
+			return nil, repoErr("ListHistory", err)
+		}
+		result = append(result, h)
+	}
+	return result, nil
 }
 
-func scanBenefitRequest(row pgx.CollectableRow) (domain.BenefitRequest, error) {
+func scanBenefitRequest(row pgx.Row) (domain.BenefitRequest, error) {
 	var br domain.BenefitRequest
 	err := row.Scan(&br.ID, &br.CompanyID, &br.EmployeeID, &br.BenefitID, &br.PlanID, &br.EmployeeBenefitID,
 		&br.RequestType, &br.Status, &br.RequestData, &br.Justification, &br.CoverageLevel, &br.Dependents,
@@ -224,7 +244,19 @@ func (r *AssignmentRepo) ListRequests(ctx context.Context, companyID, employeeID
 		return nil, repoErr("ListRequests", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, scanBenefitRequest)
+	var result []domain.BenefitRequest
+	for rows.Next() {
+		var br domain.BenefitRequest
+		err := rows.Scan(&br.ID, &br.CompanyID, &br.EmployeeID, &br.BenefitID, &br.PlanID, &br.EmployeeBenefitID,
+			&br.RequestType, &br.Status, &br.RequestData, &br.Justification, &br.CoverageLevel, &br.Dependents,
+			&br.EffectiveDate, &br.Notes, &br.SubmittedBy, &br.SubmittedAt, &br.ResolvedBy, &br.ResolvedAt,
+			&br.ResolutionNotes, &br.CreatedAt, &br.UpdatedAt)
+		if err != nil {
+			return nil, repoErr("ListRequests", err)
+		}
+		result = append(result, br)
+	}
+	return result, nil
 }
 
 func (r *AssignmentRepo) UpdateRequest(ctx context.Context, br *domain.BenefitRequest) error {
@@ -254,9 +286,14 @@ func (r *AssignmentRepo) ListReviews(ctx context.Context, requestID uuid.UUID) (
 		return nil, repoErr("ListReviews", err)
 	}
 	defer rows.Close()
-	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.BenefitRequestReview, error) {
+	var result []domain.BenefitRequestReview
+	for rows.Next() {
 		var rev domain.BenefitRequestReview
-		err := row.Scan(&rev.ID, &rev.RequestID, &rev.StepID, &rev.ReviewerID, &rev.ReviewType, &rev.Comment, &rev.ReviewedAt)
-		return rev, err
-	})
+		err := rows.Scan(&rev.ID, &rev.RequestID, &rev.StepID, &rev.ReviewerID, &rev.ReviewType, &rev.Comment, &rev.ReviewedAt)
+		if err != nil {
+			return nil, repoErr("ListReviews", err)
+		}
+		result = append(result, rev)
+	}
+	return result, nil
 }

@@ -23,15 +23,7 @@ func (h *Handler) CreateCategory(c *gin.Context) {
 }
 
 func (h *Handler) ListCategories(c *gin.Context) {
-	parentID := qs(c, "parent_id")
-	var pid *uuid.UUID
-	if parentID != nil {
-		id, err := uuid.Parse(*parentID)
-		if err == nil {
-			pid = &id
-		}
-	}
-	categories, err := h.CatalogSvc.ListCategories(c.Request.Context(), companyID(c), pid)
+	categories, err := h.CatalogSvc.ListCategories(c.Request.Context(), companyID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -64,7 +56,7 @@ func (h *Handler) UpdateCategory(c *gin.Context) {
 		return
 	}
 	req.ID = id
-	cat, err := h.CatalogSvc.UpdateCategory(c.Request.Context(), companyID(c), &req)
+	cat, err := h.CatalogSvc.UpdateCategory(c.Request.Context(), companyID(c), userID(c), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

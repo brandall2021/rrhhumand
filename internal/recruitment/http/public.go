@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rrhhumand/api/internal/recruitment/application"
 	"github.com/rrhhumand/api/pkg/response"
 )
 
@@ -24,12 +25,26 @@ func (h *Handler) GetPublicPosting(c *gin.Context) {
 }
 
 func (h *Handler) PublicApply(c *gin.Context) {
-	var req map[string]any
+	var req application.PublicApplyReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request body")
 		return
 	}
-	data, err := h.PostingSvc.PublicApply(c.Request.Context(), c.Param("id"), req)
+	posting, err := h.PostingSvc.GetPublicByID(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		response.NotFound(c, "Job posting not found")
+		return
+	}
+	candidate, err := h.CandidateSvc.Create(c.Request.Context(), posting.CompanyID, &application.CreateCandidateReq{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+	})
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	data, err := h.ApplicationSvc.Create(c.Request.Context(), posting.CompanyID, candidate.ID, posting.ID)
 	if err != nil {
 		response.BadRequest(c, err.Error())
 		return

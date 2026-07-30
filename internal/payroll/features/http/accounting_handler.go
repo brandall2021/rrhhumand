@@ -89,7 +89,7 @@ func (h *Handler) GenerateExportAccounting(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid run_id"})
 		return
 	}
-	e, err := h.AccountingSvc.GenerateExport(c.Request.Context(), companyID(c), runID, req.ExportType, req.FileFormat, userID(c))
+	e, err := h.AccountingSvc.GenerateAccountingExport(c.Request.Context(), companyID(c), runID, req.ExportType, req.FileFormat, userID(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -3,7 +3,25 @@
 Sistema SaaS de Gestión de Recursos Humanos con arquitectura de monolito modular, diseñado para soporte multi-empresa y futura extracción a microservicios.
 
 ## Stack Tecnológico
+Demo company: TechCorp Argentina (slug: techcorp-ar)
 
+     ┌─────────────────────┬──────────────────────────────────┬──────────────┬──────────────────┐
+     │Usuario              │Email                             │Password      │Rol               │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │Admin                │admin@techcorp.com                │admin123      │COMPANY_ADMIN     │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │HR                   │hr@techcorp.com                   │hr123         │HR_ADMIN          │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │Carlos García        │carlos.garcia@techcorp.com        │emp123        │MANAGER           │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │María López          │maria.lopez@techcorp.com          │emp123        │EMPLOYEE          │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │Ana Martínez         │ana.martinez@techcorp.com         │emp123        │EMPLOYEE          │      ⬖ Getting started                ✕
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
+     │Pedro Fernández      │pedro.fernandez@techcorp.com      │emp123        │EMPLOYEE          │        OpenCode includes free models
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤        so you can start immediately.
+     │Lucía Torres         │lucia.torres@techcorp.com         │emp123        │EMPLOYEE          │
+     └─────────────────────┴──────────────────────────────────┴──────────────┴──────────────────┘  
 | Componente | Tecnología |
 |---|---|
 | **Lenguaje** | Go 1.25.0 |

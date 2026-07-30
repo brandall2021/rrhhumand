@@ -835,12 +835,12 @@ func NewRouter(
 			protected.GET("/compensation/structures/:id", compHandler.GetStructure)
 			protected.PUT("/compensation/structures/:id", compHandler.UpdateStructure)
 
-			protected.GET("/compensation/structures/:structure_id/grades", compHandler.ListGrades)
-			protected.POST("/compensation/structures/:structure_id/grades", compHandler.CreateGrade)
+			protected.GET("/compensation/structures/:id/grades", compHandler.ListGrades)
+			protected.POST("/compensation/structures/:id/grades", compHandler.CreateGrade)
 			protected.PUT("/compensation/grades/:id", compHandler.UpdateGrade)
 
-			protected.GET("/compensation/structures/:structure_id/bands", compHandler.ListBands)
-			protected.POST("/compensation/structures/:structure_id/bands", compHandler.CreateBand)
+			protected.GET("/compensation/structures/:id/bands", compHandler.ListBands)
+			protected.POST("/compensation/structures/:id/bands", compHandler.CreateBand)
 			protected.GET("/compensation/bands/:id", compHandler.GetBand)
 			protected.PUT("/compensation/bands/:id", compHandler.UpdateBand)
 

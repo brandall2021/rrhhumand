@@ -98,7 +98,7 @@ func (h *Handler) CreateGrade(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	g, err := h.svc.CreateGrade(c.Request.Context(), h.companyID(c), c.Param("structure_id"), h.userID(c), req)
+	g, err := h.svc.CreateGrade(c.Request.Context(), h.companyID(c), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -120,7 +120,7 @@ func (h *Handler) UpdateGrade(c *gin.Context) {
 }
 
 func (h *Handler) ListGrades(c *gin.Context) {
-	list, err := h.svc.ListGrades(c.Request.Context(), h.companyID(c), c.Param("structure_id"))
+	list, err := h.svc.ListGrades(c.Request.Context(), h.companyID(c), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -134,7 +134,7 @@ func (h *Handler) CreateBand(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	b, err := h.svc.CreateBand(c.Request.Context(), h.companyID(c), c.Param("structure_id"), h.userID(c), req)
+	b, err := h.svc.CreateBand(c.Request.Context(), h.companyID(c), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -165,7 +165,7 @@ func (h *Handler) GetBand(c *gin.Context) {
 }
 
 func (h *Handler) ListBands(c *gin.Context) {
-	list, err := h.svc.ListBands(c.Request.Context(), h.companyID(c), c.Param("structure_id"))
+	list, err := h.svc.ListBands(c.Request.Context(), h.companyID(c), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

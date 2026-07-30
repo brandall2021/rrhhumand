@@ -9,3 +9,6 @@ bin/
 tmp/
 vendor/
 coverage.*
+frontend/node_modules/
+frontend/dist/
+frontend/.oxlintrc.json

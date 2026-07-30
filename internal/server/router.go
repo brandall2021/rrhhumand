@@ -747,8 +747,8 @@ func NewRouter(
 			protected.PUT("/training/courses/:id", trainingHandler.UpdateCourse)
 			protected.POST("/training/courses/:id/publish", trainingHandler.PublishCourse)
 
-			protected.GET("/training/courses/:course_id/versions", trainingHandler.ListVersions)
-			protected.POST("/training/courses/:course_id/versions", trainingHandler.CreateVersion)
+			protected.GET("/training/courses/:id/versions", trainingHandler.ListVersions)
+			protected.POST("/training/courses/:id/versions", trainingHandler.CreateVersion)
 
 			protected.GET("/training/versions/:version_id/contents", trainingHandler.ListContents)
 			protected.POST("/training/versions/:version_id/contents", trainingHandler.CreateContent)
@@ -760,35 +760,35 @@ func NewRouter(
 			protected.POST("/training/offerings", trainingHandler.CreateOffering)
 			protected.PUT("/training/offerings/:id", trainingHandler.UpdateOffering)
 
-			protected.GET("/training/offerings/:offering_id/sessions", trainingHandler.ListSessions)
-			protected.POST("/training/offerings/:offering_id/sessions", trainingHandler.CreateSession)
+			protected.GET("/training/offerings/:id/sessions", trainingHandler.ListSessions)
+			protected.POST("/training/offerings/:id/sessions", trainingHandler.CreateSession)
 
 			protected.GET("/training/enrollments", trainingHandler.ListEnrollments)
 			protected.GET("/training/enrollments/:id", trainingHandler.GetEnrollment)
-			protected.POST("/training/offerings/:offering_id/enroll", trainingHandler.Enroll)
+			protected.POST("/training/offerings/:id/enroll", trainingHandler.Enroll)
 			protected.POST("/training/enrollments/:id/complete", trainingHandler.CompleteEnrollment)
 
-			protected.GET("/training/enrollments/:enrollment_id/progress", trainingHandler.ListProgress)
-			protected.GET("/training/enrollments/:enrollment_id/progress/:content_id", trainingHandler.GetProgress)
-			protected.PUT("/training/enrollments/:enrollment_id/progress", trainingHandler.UpdateProgress)
+			protected.GET("/training/enrollments/:id/progress", trainingHandler.ListProgress)
+			protected.GET("/training/enrollments/:id/progress/:content_id", trainingHandler.GetProgress)
+			protected.PUT("/training/enrollments/:id/progress", trainingHandler.UpdateProgress)
 
 			protected.POST("/training/assignments", trainingHandler.CreateAssignment)
 
 			protected.GET("/training/assignment-rules", trainingHandler.ListAssignmentRules)
 			protected.POST("/training/assignment-rules", trainingHandler.CreateAssignmentRule)
 
-			protected.GET("/training/courses/:course_id/assessments", trainingHandler.ListAssessments)
+			protected.GET("/training/courses/:id/assessments", trainingHandler.ListAssessments)
 			protected.GET("/training/assessments/:id", trainingHandler.GetAssessment)
-			protected.POST("/training/courses/:course_id/assessments", trainingHandler.CreateAssessment)
+			protected.POST("/training/courses/:id/assessments", trainingHandler.CreateAssessment)
 			protected.PUT("/training/assessments/:id", trainingHandler.UpdateAssessment)
 
-			protected.GET("/training/assessments/:assessment_id/questions", trainingHandler.GetQuestions)
-			protected.POST("/training/assessments/:assessment_id/questions", trainingHandler.AddQuestion)
+			protected.GET("/training/assessments/:id/questions", trainingHandler.GetQuestions)
+			protected.POST("/training/assessments/:id/questions", trainingHandler.AddQuestion)
 
-			protected.POST("/training/enrollments/:enrollment_id/assessments/:assessment_id/start", trainingHandler.StartAttempt)
+			protected.POST("/training/enrollments/:id/assessments/:assessment_id/start", trainingHandler.StartAttempt)
 			protected.POST("/training/attempts/:id/submit", trainingHandler.SubmitAttempt)
 			protected.GET("/training/attempts/:id", trainingHandler.GetAttempt)
-			protected.GET("/training/enrollments/:enrollment_id/attempts", trainingHandler.ListAttempts)
+			protected.GET("/training/enrollments/:id/attempts", trainingHandler.ListAttempts)
 
 			protected.GET("/training/instructors", trainingHandler.ListInstructors)
 			protected.GET("/training/instructors/:id", trainingHandler.GetInstructor)
@@ -803,8 +803,8 @@ func NewRouter(
 			protected.POST("/training/employees/:employee_id/competencies/:competency_id", trainingHandler.AssignCompetency)
 			protected.GET("/training/employees/:employee_id/competencies", trainingHandler.GetEmployeeCompetencies)
 
-			protected.POST("/training/courses/:course_id/competencies", trainingHandler.AddCourseCompetency)
-			protected.GET("/training/courses/:course_id/competencies", trainingHandler.ListCourseCompetencies)
+			protected.POST("/training/courses/:id/competencies", trainingHandler.AddCourseCompetency)
+			protected.GET("/training/courses/:id/competencies", trainingHandler.ListCourseCompetencies)
 
 			protected.GET("/training/training-needs", trainingHandler.ListTrainingNeeds)
 			protected.POST("/training/training-needs", trainingHandler.CreateTrainingNeed)
@@ -815,12 +815,12 @@ func NewRouter(
 			protected.GET("/training/learning-paths", trainingHandler.ListLearningPaths)
 			protected.POST("/training/learning-paths", trainingHandler.CreateLearningPath)
 
-			protected.GET("/training/enrollments/:enrollment_id/feedback", trainingHandler.GetFeedbackByEnrollment)
-			protected.POST("/training/enrollments/:enrollment_id/feedback", trainingHandler.CreateFeedback)
+			protected.GET("/training/enrollments/:id/feedback", trainingHandler.GetFeedbackByEnrollment)
+			protected.POST("/training/enrollments/:id/feedback", trainingHandler.CreateFeedback)
 
-			protected.GET("/training/enrollments/:enrollment_id/attendance", trainingHandler.ListAttendance)
-			protected.GET("/training/enrollments/:enrollment_id/attendance/:session_id", trainingHandler.GetAttendance)
-			protected.POST("/training/enrollments/:enrollment_id/sessions/:session_id/attendance", trainingHandler.CreateAttendance)
+			protected.GET("/training/enrollments/:id/attendance", trainingHandler.ListAttendance)
+			protected.GET("/training/enrollments/:id/attendance/:session_id", trainingHandler.GetAttendance)
+			protected.POST("/training/enrollments/:id/sessions/:session_id/attendance", trainingHandler.CreateAttendance)
 
 			protected.GET("/training/employees/:employee_id/certificates", trainingHandler.ListCertificates)
 

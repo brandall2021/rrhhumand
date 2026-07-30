@@ -203,7 +203,7 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	v, err := h.svc.CreateVersion(c.Request.Context(), c.Param("course_id"), h.userID(c), req)
+	v, err := h.svc.CreateVersion(c.Request.Context(), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -212,7 +212,7 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 }
 
 func (h *Handler) ListVersions(c *gin.Context) {
-	versions, err := h.svc.ListVersions(c.Request.Context(), c.Param("course_id"))
+	versions, err := h.svc.ListVersions(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -339,7 +339,7 @@ func (h *Handler) CreateSession(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	sess, err := h.svc.CreateSession(c.Request.Context(), c.Param("offering_id"), h.userID(c), req)
+	sess, err := h.svc.CreateSession(c.Request.Context(), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -348,7 +348,7 @@ func (h *Handler) CreateSession(c *gin.Context) {
 }
 
 func (h *Handler) ListSessions(c *gin.Context) {
-	sessions, err := h.svc.ListSessions(c.Request.Context(), c.Param("offering_id"))
+	sessions, err := h.svc.ListSessions(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -365,7 +365,7 @@ func (h *Handler) Enroll(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	enrollment, err := h.svc.Enroll(c.Request.Context(), h.companyID(c), c.Param("offering_id"), h.userID(c), req)
+	enrollment, err := h.svc.Enroll(c.Request.Context(), h.companyID(c), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -415,7 +415,7 @@ func (h *Handler) UpdateProgress(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	if err := h.svc.UpdateProgress(c.Request.Context(), c.Param("enrollment_id"), req); err != nil {
+	if err := h.svc.UpdateProgress(c.Request.Context(), c.Param("id"), req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -423,7 +423,7 @@ func (h *Handler) UpdateProgress(c *gin.Context) {
 }
 
 func (h *Handler) GetProgress(c *gin.Context) {
-	progress, err := h.svc.GetProgress(c.Request.Context(), c.Param("enrollment_id"), c.Param("content_id"))
+	progress, err := h.svc.GetProgress(c.Request.Context(), c.Param("id"), c.Param("content_id"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "progress not found"})
 		return
@@ -432,7 +432,7 @@ func (h *Handler) GetProgress(c *gin.Context) {
 }
 
 func (h *Handler) ListProgress(c *gin.Context) {
-	progress, err := h.svc.ListProgress(c.Request.Context(), c.Param("enrollment_id"))
+	progress, err := h.svc.ListProgress(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -523,7 +523,7 @@ func (h *Handler) GetAssessment(c *gin.Context) {
 }
 
 func (h *Handler) ListAssessments(c *gin.Context) {
-	assessments, err := h.svc.ListAssessments(c.Request.Context(), h.companyID(c), c.Param("course_id"))
+	assessments, err := h.svc.ListAssessments(c.Request.Context(), h.companyID(c), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -540,7 +540,7 @@ func (h *Handler) AddQuestion(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	question, err := h.svc.AddQuestion(c.Request.Context(), c.Param("assessment_id"), req)
+	question, err := h.svc.AddQuestion(c.Request.Context(), c.Param("id"), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -549,7 +549,7 @@ func (h *Handler) AddQuestion(c *gin.Context) {
 }
 
 func (h *Handler) GetQuestions(c *gin.Context) {
-	questions, err := h.svc.GetQuestions(c.Request.Context(), c.Param("assessment_id"))
+	questions, err := h.svc.GetQuestions(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -562,7 +562,7 @@ func (h *Handler) GetQuestions(c *gin.Context) {
 // ---------------------------------------------------------------------------
 
 func (h *Handler) StartAttempt(c *gin.Context) {
-	attempt, err := h.svc.StartAttempt(c.Request.Context(), c.Param("enrollment_id"), c.Param("assessment_id"))
+	attempt, err := h.svc.StartAttempt(c.Request.Context(), c.Param("id"), c.Param("assessment_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -593,7 +593,7 @@ func (h *Handler) GetAttempt(c *gin.Context) {
 }
 
 func (h *Handler) ListAttempts(c *gin.Context) {
-	attempts, err := h.svc.ListAttempts(c.Request.Context(), c.Param("enrollment_id"))
+	attempts, err := h.svc.ListAttempts(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -731,7 +731,7 @@ func (h *Handler) AddCourseCompetency(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	if err := h.svc.AddCourseCompetency(c.Request.Context(), c.Param("course_id"), req.CompetencyID, req.ExpectedLevel, req.Weight); err != nil {
+	if err := h.svc.AddCourseCompetency(c.Request.Context(), c.Param("id"), req.CompetencyID, req.ExpectedLevel, req.Weight); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -739,7 +739,7 @@ func (h *Handler) AddCourseCompetency(c *gin.Context) {
 }
 
 func (h *Handler) ListCourseCompetencies(c *gin.Context) {
-	competencies, err := h.svc.ListCourseCompetencies(c.Request.Context(), c.Param("course_id"))
+	competencies, err := h.svc.ListCourseCompetencies(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -834,7 +834,7 @@ func (h *Handler) CreateFeedback(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	feedback, err := h.svc.CreateFeedback(c.Request.Context(), c.Param("enrollment_id"), h.userID(c), req)
+	feedback, err := h.svc.CreateFeedback(c.Request.Context(), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -843,7 +843,7 @@ func (h *Handler) CreateFeedback(c *gin.Context) {
 }
 
 func (h *Handler) GetFeedbackByEnrollment(c *gin.Context) {
-	feedback, err := h.svc.GetFeedbackByEnrollment(c.Request.Context(), c.Param("enrollment_id"))
+	feedback, err := h.svc.GetFeedbackByEnrollment(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "feedback not found"})
 		return
@@ -860,7 +860,7 @@ func (h *Handler) CreateAttendance(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	att, err := h.svc.CreateAttendance(c.Request.Context(), c.Param("enrollment_id"), c.Param("session_id"), h.userID(c), req)
+	att, err := h.svc.CreateAttendance(c.Request.Context(), c.Param("id"), c.Param("session_id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -869,7 +869,7 @@ func (h *Handler) CreateAttendance(c *gin.Context) {
 }
 
 func (h *Handler) GetAttendance(c *gin.Context) {
-	att, err := h.svc.GetAttendance(c.Request.Context(), c.Param("enrollment_id"), c.Param("session_id"))
+	att, err := h.svc.GetAttendance(c.Request.Context(), c.Param("id"), c.Param("session_id"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "attendance not found"})
 		return
@@ -878,7 +878,7 @@ func (h *Handler) GetAttendance(c *gin.Context) {
 }
 
 func (h *Handler) ListAttendance(c *gin.Context) {
-	att, err := h.svc.ListAttendance(c.Request.Context(), c.Param("enrollment_id"))
+	att, err := h.svc.ListAttendance(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

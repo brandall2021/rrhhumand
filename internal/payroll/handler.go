@@ -115,7 +115,7 @@ func (h *Handler) CreateRun(c *gin.Context) {
 	if !h.bindJSON(c, &req) {
 		return
 	}
-	run, err := h.svc.CreateRun(c.Request.Context(), h.companyID(c), c.Param("period_id"), h.userID(c), req)
+	run, err := h.svc.CreateRun(c.Request.Context(), h.companyID(c), c.Param("id"), h.userID(c), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -218,7 +218,7 @@ func (h *Handler) ListRunEmployees(c *gin.Context) {
 }
 
 func (h *Handler) GetEmployeeResult(c *gin.Context) {
-	res, err := h.svc.GetEmployeeResult(c.Request.Context(), h.companyID(c), c.Param("run_id"), c.Param("employee_id"))
+	res, err := h.svc.GetEmployeeResult(c.Request.Context(), h.companyID(c), c.Param("id"), c.Param("eid"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "employee result not found"})
 		return
@@ -227,7 +227,7 @@ func (h *Handler) GetEmployeeResult(c *gin.Context) {
 }
 
 func (h *Handler) GetEmployeeItems(c *gin.Context) {
-	items, err := h.svc.GetEmployeeItems(c.Request.Context(), h.companyID(c), c.Param("run_id"), c.Param("employee_id"))
+	items, err := h.svc.GetEmployeeItems(c.Request.Context(), h.companyID(c), c.Param("id"), c.Param("eid"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "items not found"})
 		return
@@ -236,7 +236,7 @@ func (h *Handler) GetEmployeeItems(c *gin.Context) {
 }
 
 func (h *Handler) GetEmployeeBases(c *gin.Context) {
-	re, err := h.svc.GetRunEmployee(c.Request.Context(), h.companyID(c), c.Param("run_id"), c.Param("employee_id"))
+	re, err := h.svc.GetRunEmployee(c.Request.Context(), h.companyID(c), c.Param("id"), c.Param("eid"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "employee not found"})
 		return

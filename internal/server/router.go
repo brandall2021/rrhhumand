@@ -334,8 +334,8 @@ func NewRouter(
 			protected.PUT("/payroll/periods/:id", payHandler.UpdatePeriod)
 			protected.POST("/payroll/periods/:id/close", payHandler.ClosePeriod)
 
-			protected.GET("/payroll/periods/:period_id/runs", payHandler.ListRuns)
-			protected.POST("/payroll/periods/:period_id/runs", payHandler.CreateRun)
+			protected.GET("/payroll/periods/:id/runs", payHandler.ListRuns)
+			protected.POST("/payroll/periods/:id/runs", payHandler.CreateRun)
 			protected.GET("/payroll/runs/:id", payHandler.GetRun)
 			protected.POST("/payroll/runs/:id/calculate", payHandler.CalculateRun)
 			protected.POST("/payroll/runs/:id/validate", payHandler.ValidateRun)
@@ -346,9 +346,9 @@ func NewRouter(
 
 			protected.POST("/payroll/runs/:id/employees", payHandler.AddEmployeeToRun)
 			protected.GET("/payroll/runs/:id/employees", payHandler.ListRunEmployees)
-			protected.GET("/payroll/runs/:run_id/employees/:employee_id/result", payHandler.GetEmployeeResult)
-			protected.GET("/payroll/runs/:run_id/employees/:employee_id/items", payHandler.GetEmployeeItems)
-			protected.GET("/payroll/runs/:run_id/employees/:employee_id/bases", payHandler.GetEmployeeBases)
+			protected.GET("/payroll/runs/:id/employees/:eid/result", payHandler.GetEmployeeResult)
+			protected.GET("/payroll/runs/:id/employees/:eid/items", payHandler.GetEmployeeItems)
+			protected.GET("/payroll/runs/:id/employees/:eid/bases", payHandler.GetEmployeeBases)
 
 			protected.POST("/payroll/concepts", payHandler.CreateConcept)
 			protected.GET("/payroll/concepts", payHandler.ListConcepts)

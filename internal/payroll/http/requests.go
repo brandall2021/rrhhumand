@@ -3,6 +3,8 @@ package http
 import (
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/rrhhumand/api/internal/payroll/application"
 )
 
@@ -100,7 +102,7 @@ func (r CreateRuleReq) ToInput() application.CreateRuleInput {
 	return application.CreateRuleInput{
 		ConceptID: r.ConceptID, RuleType: r.RuleType, Formula: r.Formula,
 		Parameters: r.Parameters, Priority: r.Priority,
-		EffectiveFrom: &r.EffectiveFrom, EffectiveTo: r.EffectiveTo,
+		EffectiveFrom: r.EffectiveFrom, EffectiveTo: r.EffectiveTo,
 	}
 }
 
@@ -176,7 +178,7 @@ type CreateAdvanceReq struct {
 
 func (r CreateAdvanceReq) ToInput() application.CreateAdvanceInput {
 	return application.CreateAdvanceInput{
-		EmployeeID: r.EmployeeID, Amount: r.Amount, RequestDate: r.RequestDate,
+		EmployeeID: r.EmployeeID, Amount: decimal.NewFromFloat(r.Amount), RequestDate: r.RequestDate,
 		Installments: r.Installments, Reason: r.Reason,
 	}
 }
@@ -197,10 +199,20 @@ type CreateGarnishmentReq struct {
 }
 
 func (r CreateGarnishmentReq) ToInput() application.CreateGarnishmentInput {
+	var percentage *decimal.Decimal
+	if r.Percentage != nil {
+		p := decimal.NewFromFloat(*r.Percentage)
+		percentage = &p
+	}
+	var fixedAmount *decimal.Decimal
+	if r.FixedAmount != nil {
+		f := decimal.NewFromFloat(*r.FixedAmount)
+		fixedAmount = &f
+	}
 	return application.CreateGarnishmentInput{
 		EmployeeID: r.EmployeeID, CourtOrderNumber: r.CourtOrderNumber,
-		CourtName: r.CourtName, Type: r.Type, Percentage: r.Percentage,
-		FixedAmount: r.FixedAmount, Priority: r.Priority, EffectiveFrom: r.EffectiveFrom,
+		CourtName: r.CourtName, Type: r.Type, Percentage: percentage,
+		FixedAmount: fixedAmount, Priority: r.Priority, EffectiveFrom: r.EffectiveFrom,
 	}
 }
 
@@ -244,8 +256,13 @@ type CreateSalaryScaleReq struct {
 }
 
 func (r CreateSalaryScaleReq) ToInput() application.CreateSalaryScaleInput {
+	var maximumSalary *decimal.Decimal
+	if r.MaximumSalary != nil {
+		m := decimal.NewFromFloat(*r.MaximumSalary)
+		maximumSalary = &m
+	}
 	return application.CreateSalaryScaleInput{
 		AgreementID: r.AgreementID, CategoryID: r.CategoryID,
-		MinimumSalary: r.MinimumSalary, MaximumSalary: r.MaximumSalary,
+		MinimumSalary: decimal.NewFromFloat(r.MinimumSalary), MaximumSalary: maximumSalary,
 	}
 }

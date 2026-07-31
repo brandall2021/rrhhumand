@@ -75,7 +75,7 @@ func (e *PolicyEngine) CheckMaxAmount(rule domain.ExpensePolicyRule, amount deci
 			Limit:   *rule.MaxAmount,
 			Actual:  amount,
 			Excess:  excess,
-			Message: fmt.Sprintf("amount %.2f exceeds max %.2f by %.2f", amount, *rule.MaxAmount, excess),
+			Message: fmt.Sprintf("amount %s exceeds max %s by %s", amount.StringFixed(2), rule.MaxAmount.StringFixed(2), excess.StringFixed(2)),
 		}
 	}
 	return nil

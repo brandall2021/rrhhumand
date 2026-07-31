@@ -15,6 +15,7 @@ import {
   Receipt,
   Handshake,
   FileText,
+  CalendarCheck,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -32,6 +33,7 @@ const navItems = [
   { href: '/compensation', label: 'Compensaciones', icon: DollarSign },
   { href: '/expenses', label: 'Gastos', icon: Receipt },
   { href: '/documents', label: 'Documentos', icon: FileText },
+  { href: '/leaves', label: 'Licencias', icon: CalendarCheck },
 ]
 
 export default function AppLayout() {

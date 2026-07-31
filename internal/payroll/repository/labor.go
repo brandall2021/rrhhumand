@@ -127,3 +127,17 @@ func (r *Repository) GetEmployeeCompensation(ctx context.Context, companyID, emp
 	}
 	return amount, currency, nil
 }
+
+func (r *Repository) GetEmployeeAgreementCategory(ctx context.Context, companyID, employeeID string) (agreementID, categoryID *string, err error) {
+	q := `SELECT e.agreement_id, e.category_id FROM employee_positions ep
+		JOIN positions p ON p.id=ep.position_id
+		LEFT JOIN employees e ON e.id=ep.employee_id
+		WHERE ep.employee_id=$1 AND ep.company_id=$2 AND (ep.end_date IS NULL OR ep.end_date>=CURRENT_DATE)
+		LIMIT 1`
+	row := r.pool.QueryRow(ctx, q, employeeID, companyID)
+	err = row.Scan(&agreementID, &categoryID)
+	if err != nil {
+		return nil, nil, repoErr("GetEmployeeAgreementCategory", err)
+	}
+	return
+}

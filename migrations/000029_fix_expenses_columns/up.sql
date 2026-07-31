@@ -1,0 +1,6 @@
+-- 000029: Add missing columns to expenses table
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(18,2) DEFAULT 0;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS total_amount NUMERIC(18,2) DEFAULT 0;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_required BOOLEAN DEFAULT false;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_billable BOOLEAN DEFAULT false;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS billable_client VARCHAR(200);

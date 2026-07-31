@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -38,6 +39,36 @@ func (r *AllowanceRepo) GetRule(ctx context.Context, companyID, id uuid.UUID) (*
 		return nil, repoErr("AllowanceRepo.Get", err)
 	}
 	return &a, nil
+}
+
+func (r *AllowanceRepo) List(ctx context.Context, companyID uuid.UUID, country, employeeCategory *string) ([]domain.DailyAllowanceRule, error) {
+	q := `SELECT id,company_id,name,country,region,city,employee_category,daily_amount,currency,
+		meal_percentage,lodging_percentage,transport_percentage,other_percentage,effective_from,effective_to,is_active,created_by,created_at,updated_at
+		FROM daily_allowance_rules WHERE company_id=$1`
+	args := []any{companyID}
+	n := 2
+	if country != nil {
+		q += fmt.Sprintf(" AND country=$%d", n)
+		args = append(args, *country)
+		n++
+	}
+	if employeeCategory != nil {
+		q += fmt.Sprintf(" AND employee_category=$%d", n)
+		args = append(args, *employeeCategory)
+		n++
+	}
+	q += " ORDER BY country,city"
+	rows, err := r.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, repoErr("AllowanceRepo.List", err)
+	}
+	defer rows.Close()
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.DailyAllowanceRule, error) {
+		var a domain.DailyAllowanceRule
+		err := row.Scan(&a.ID, &a.CompanyID, &a.Name, &a.Country, &a.Region, &a.City, &a.EmployeeCategory, &a.DailyAmount, &a.Currency,
+			&a.MealPercentage, &a.LodgingPercentage, &a.TransportPercentage, &a.OtherPercentage, &a.EffectiveFrom, &a.EffectiveTo, &a.IsActive, &a.CreatedBy, &a.CreatedAt, &a.UpdatedAt)
+		return a, err
+	})
 }
 
 func (r *AllowanceRepo) ListRules(ctx context.Context, companyID uuid.UUID) ([]domain.DailyAllowanceRule, error) {

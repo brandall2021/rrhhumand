@@ -10,6 +10,8 @@ import TrainingPage from '@/pages/training'
 import CompensationPage from '@/pages/compensation'
 import ExpensesPage from '@/pages/expenses'
 import DocumentsPage from '@/pages/documents'
+import LeavesPage from '@/pages/leaves'
+import EmployeeDetailPage from '@/pages/employee-detail'
 import AppLayout from '@/layouts/app-layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -48,6 +50,8 @@ function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="employees" element={<EmployeesPage />} />
+            <Route path="employees/:id" element={<EmployeeDetailPage />} />
+            <Route path="leaves" element={<LeavesPage />} />
             <Route path="departments" element={<DepartmentsPage />} />
             <Route path="positions" element={<PositionsPage />} />
             <Route path="recruitment" element={<RecruitmentPage />} />

@@ -22,8 +22,8 @@ func NewExpenseRepo(pool *pgxpool.Pool) *ExpenseRepo {
 
 func (r *ExpenseRepo) Create(ctx context.Context, e *domain.Expense) error {
 	q := `INSERT INTO expenses (id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by)
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`
 	_, err := r.pool.Exec(ctx, q, e.ID, e.CompanyID, e.EmployeeID, e.TravelID, e.CategoryID, e.PaymentMethodID,
 		e.ExpenseReportID, e.Description, e.MerchantName, e.OriginalAmount, e.TaxAmount, e.TotalAmount, e.OriginalCurrency,
@@ -33,8 +33,8 @@ func (r *ExpenseRepo) Create(ctx context.Context, e *domain.Expense) error {
 
 func (r *ExpenseRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
 		FROM expenses WHERE id=$1`
 	row := r.pool.QueryRow(ctx, q, id)
 	var e domain.Expense
@@ -50,8 +50,8 @@ func (r *ExpenseRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Expens
 
 func (r *ExpenseRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
 		FROM expenses WHERE id=$1 AND company_id=$2`
 	row := r.pool.QueryRow(ctx, q, id, companyID)
 	var e domain.Expense
@@ -67,8 +67,8 @@ func (r *ExpenseRepo) Get(ctx context.Context, companyID, id uuid.UUID) (*domain
 
 func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID, travelID *uuid.UUID, status *string, dateFrom, dateTo *time.Time, limit, offset int) ([]domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
 		FROM expenses WHERE company_id=$1`
 	args := []any{companyID}
 	n := 2
@@ -123,9 +123,9 @@ func (r *ExpenseRepo) List(ctx context.Context, companyID uuid.UUID, employeeID,
 }
 
 func (r *ExpenseRepo) Update(ctx context.Context, e *domain.Expense) error {
-	q := `UPDATE expenses SET category_id=$1,payment_method_id=$2,description=$3,merchant=$4,
-		amount=$5,tax_amount=$6,total_amount=$7,currency=$8,exchange_rate=$9,expense_date=$10,
-		status=$11,notes=$12,receipt_required=$13,is_billable=$14,billable_client=$15,updated_at=NOW()
+	q := `UPDATE expenses SET category_id=$1,payment_method_id=$2,description=$3,merchant_name=$4,
+		original_amount=$5,tax_amount=$6,total_amount=$7,original_currency=$8,exchange_rate=$9,expense_date=$10,
+		status=$11,observation=$12,receipt_required=$13,is_billable=$14,billable_client=$15,updated_at=NOW()
 		WHERE id=$16 AND company_id=$17`
 	_, err := r.pool.Exec(ctx, q, e.CategoryID, e.PaymentMethodID, e.Description, e.MerchantName,
 		e.OriginalAmount, e.TaxAmount, e.TotalAmount, e.OriginalCurrency, e.ExchangeRate, e.ExpenseDate,
@@ -145,8 +145,8 @@ func (r *ExpenseRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (r *ExpenseRepo) ListByReport(ctx context.Context, expenseReportID uuid.UUID) ([]domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
 		FROM expenses WHERE report_id=$1 ORDER BY expense_date`
 	rows, err := r.pool.Query(ctx, q, expenseReportID)
 	if err != nil {
@@ -165,9 +165,9 @@ func (r *ExpenseRepo) ListByReport(ctx context.Context, expenseReportID uuid.UUI
 
 func (r *ExpenseRepo) Search(ctx context.Context, companyID uuid.UUID, query string) ([]domain.Expense, error) {
 	q := `SELECT id,company_id,employee_id,travel_id,category_id,payment_method_id,report_id,
-		description,merchant,amount,tax_amount,total_amount,currency,exchange_rate,expense_date,
-		status,notes,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
-		FROM expenses WHERE company_id=$1 AND (description ILIKE $2 OR merchant ILIKE $2) ORDER BY expense_date DESC`
+		description,merchant_name,original_amount,tax_amount,total_amount,original_currency,exchange_rate,expense_date,
+		status,observation,receipt_required,is_billable,billable_client,created_by,created_at,updated_at
+		FROM expenses WHERE company_id=$1 AND (description ILIKE $2 OR merchant_name ILIKE $2) ORDER BY expense_date DESC`
 	searchPattern := "%" + query + "%"
 	rows, err := r.pool.Query(ctx, q, companyID, searchPattern)
 	if err != nil {

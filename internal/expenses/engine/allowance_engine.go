@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/rrhhumand/api/internal/expenses/domain"

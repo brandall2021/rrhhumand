@@ -16,10 +16,10 @@ Demo company: TechCorp Argentina (slug: techcorp-ar)
      ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
      │María López          │maria.lopez@techcorp.com          │emp123        │EMPLOYEE          │
      ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
-     │Ana Martínez         │ana.martinez@techcorp.com         │emp123        │EMPLOYEE          │      ⬖ Getting started                ✕
+     │Ana Martínez         │ana.martinez@techcorp.com         │emp123        │EMPLOYEE          │
      ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
-     │Pedro Fernández      │pedro.fernandez@techcorp.com      │emp123        │EMPLOYEE          │        OpenCode includes free models
-     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤        so you can start immediately.
+     │Pedro Fernández      │pedro.fernandez@techcorp.com      │emp123        │EMPLOYEE          │
+     ├─────────────────────┼──────────────────────────────────┼──────────────┼──────────────────┤
      │Lucía Torres         │lucia.torres@techcorp.com         │emp123        │EMPLOYEE          │
      └─────────────────────┴──────────────────────────────────┴──────────────┴──────────────────┘  
 | Componente | Tecnología |

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -91,7 +92,18 @@ func NewRouter(
 		}
 
 		protected := v1.Group("")
-		protected.Use(middleware.AuthMiddleware(jwtService))
+		protected.Use(middleware.AuthMiddleware(jwtService, func(ctx context.Context, userID, companyID string) (string, error) {
+			var employeeID string
+			err := pool.QueryRow(ctx,
+				`SELECT e.id FROM user_companies uc
+				 JOIN employees e ON e.company_id = uc.company_id AND e.status = 'active'
+				 WHERE uc.user_id = $1 AND uc.company_id = $2
+				 LIMIT 1`, userID, companyID).Scan(&employeeID)
+			if err != nil {
+				return "", err
+			}
+			return employeeID, nil
+		}))
 		{
 			protected.GET("/auth/me", authHandler.Me)
 

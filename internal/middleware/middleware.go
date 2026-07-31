@@ -14,7 +14,9 @@ type PermissionChecker interface {
 	HasPermission(ctx context.Context, userID, companyID, resource, action string) (bool, error)
 }
 
-func AuthMiddleware(jwtService *auth.JWTService) gin.HandlerFunc {
+type EmployeeResolver func(ctx context.Context, userID, companyID string) (string, error)
+
+func AuthMiddleware(jwtService *auth.JWTService, employeeResolvers ...EmployeeResolver) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -41,6 +43,16 @@ func AuthMiddleware(jwtService *auth.JWTService) gin.HandlerFunc {
 		c.Set("email", claims.Email)
 		c.Set("company_id", claims.CompanyID)
 		c.Set("roles", claims.Roles)
+
+		for _, resolve := range employeeResolvers {
+			if resolve == nil {
+				continue
+			}
+			if employeeID, rerr := resolve(c.Request.Context(), claims.UserID, claims.CompanyID); rerr == nil && employeeID != "" {
+				c.Set("employee_id", employeeID)
+				break
+			}
+		}
 		c.Next()
 	}
 }

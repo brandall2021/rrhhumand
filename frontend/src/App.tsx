@@ -12,6 +12,11 @@ import ExpensesPage from '@/pages/expenses'
 import DocumentsPage from '@/pages/documents'
 import LeavesPage from '@/pages/leaves'
 import EmployeeDetailPage from '@/pages/employee-detail'
+import ProfilePage from '@/pages/profile'
+import OrgChartPage from '@/pages/org-chart'
+import FeedPage from '@/pages/feed'
+import SurveysPage from '@/pages/surveys'
+import SettingsPage from '@/pages/settings'
 import AppLayout from '@/layouts/app-layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -59,6 +64,11 @@ function App() {
             <Route path="compensation" element={<CompensationPage />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="documents" element={<DocumentsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="organization" element={<OrgChartPage />} />
+            <Route path="feed" element={<FeedPage />} />
+            <Route path="surveys" element={<SurveysPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

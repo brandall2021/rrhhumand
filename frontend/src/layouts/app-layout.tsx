@@ -16,6 +16,11 @@ import {
   Handshake,
   FileText,
   CalendarCheck,
+  Network,
+  MessageSquare,
+  ClipboardList,
+  UserCircle,
+  Settings,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -25,7 +30,9 @@ import {
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/feed', label: 'Feed', icon: MessageSquare },
   { href: '/employees', label: 'Empleados', icon: Users },
+  { href: '/organization', label: 'Organigrama', icon: Network },
   { href: '/departments', label: 'Departamentos', icon: Building2 },
   { href: '/positions', label: 'Posiciones', icon: Briefcase },
   { href: '/recruitment', label: 'Reclutamiento', icon: Handshake },
@@ -34,6 +41,9 @@ const navItems = [
   { href: '/expenses', label: 'Gastos', icon: Receipt },
   { href: '/documents', label: 'Documentos', icon: FileText },
   { href: '/leaves', label: 'Licencias', icon: CalendarCheck },
+  { href: '/surveys', label: 'Encuestas', icon: ClipboardList },
+  { href: '/profile', label: 'Mi Perfil', icon: UserCircle },
+  { href: '/settings', label: 'Configuración', icon: Settings },
 ]
 
 export default function AppLayout() {
@@ -108,7 +118,7 @@ export default function AppLayout() {
 
         <Separator className="bg-sidebar-hover" />
         <div className="p-3">
-          <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
+          <Link to="/profile" onClick={() => setMobileOpen(false)} className={cn('flex items-center gap-3 rounded-lg hover:bg-sidebar-hover transition-colors', collapsed && 'justify-center')}>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-brand-600 text-white text-xs">{initials}</AvatarFallback>
             </Avatar>
@@ -118,7 +128,7 @@ export default function AppLayout() {
                 <p className="text-xs text-slate-400 truncate">{user?.email}</p>
               </div>
             )}
-          </div>
+          </Link>
         </div>
       </aside>
 

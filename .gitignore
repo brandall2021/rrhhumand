@@ -6,6 +6,7 @@
 *.dylib
 rrhhumand
 cmd/api/api
+api
 
 # Test binarios
 *.test

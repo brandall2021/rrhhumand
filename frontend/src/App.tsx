@@ -17,6 +17,13 @@ import OrgChartPage from '@/pages/org-chart'
 import FeedPage from '@/pages/feed'
 import SurveysPage from '@/pages/surveys'
 import SettingsPage from '@/pages/settings'
+import AttendancePage from '@/pages/attendance'
+import SchedulingPage from '@/pages/scheduling'
+import OvertimePage from '@/pages/overtime'
+import PayrollPage from '@/pages/payroll'
+import BenefitsPage from '@/pages/benefits'
+import PerformancePage from '@/pages/performance'
+import OnboardingPage from '@/pages/onboarding'
 import AppLayout from '@/layouts/app-layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,6 +76,13 @@ function App() {
             <Route path="feed" element={<FeedPage />} />
             <Route path="surveys" element={<SurveysPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="attendance" element={<AttendancePage />} />
+            <Route path="scheduling" element={<SchedulingPage />} />
+            <Route path="overtime" element={<OvertimePage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="benefits" element={<BenefitsPage />} />
+            <Route path="performance" element={<PerformancePage />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

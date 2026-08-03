@@ -36,6 +36,11 @@ func (w *Worker) Start(ctx context.Context, companyID string, interval time.Dura
 func (w *Worker) run(ctx context.Context, companyID string) {
 	w.log.Debug("training worker cycle", zap.String("company", companyID))
 
+	if companyID == "" {
+		w.log.Warn("training worker skipping cycle: no company context provided")
+		return
+	}
+
 	// Process pending events (notifications)
 	if err := w.svc.ProcessPendingEvents(ctx, companyID); err != nil {
 		w.log.Error("process pending events", zap.Error(err))

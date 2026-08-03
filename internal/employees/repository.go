@@ -37,9 +37,9 @@ func (r *EmployeeRepository) FindByID(ctx context.Context, id, companyID string)
 	query := `
 		SELECT
 			e.id, e.company_id, e.employee_number, e.first_name, e.last_name,
-			e.dni, e.email, e.phone, e.birth_date, e.photo_url,
+			e.dni, e.email, e.phone, e.birth_date::text, e.photo_url,
 			e.branch_id, e.department_id, e.position_id, e.manager_id,
-			e.hire_date, e.termination_date, e.status, e.created_at, e.updated_at,
+			e.hire_date::text, e.termination_date::text, e.status, e.created_at, e.updated_at,
 			b.name, d.name, p.name,
 			CASE WHEN m.id IS NOT NULL THEN m.first_name || ' ' || m.last_name ELSE NULL END
 		FROM employees e
@@ -128,9 +128,9 @@ func (r *EmployeeRepository) List(ctx context.Context, companyID string, params 
 	listQuery := fmt.Sprintf(`
 		SELECT
 			e.id, e.company_id, e.employee_number, e.first_name, e.last_name,
-			e.dni, e.email, e.phone, e.birth_date, e.photo_url,
+			e.dni, e.email, e.phone, e.birth_date::text, e.photo_url,
 			e.branch_id, e.department_id, e.position_id, e.manager_id,
-			e.hire_date, e.termination_date, e.status, e.created_at, e.updated_at,
+			e.hire_date::text, e.termination_date::text, e.status, e.created_at, e.updated_at,
 			b.name, d.name, p.name,
 			CASE WHEN m.id IS NOT NULL THEN m.first_name || ' ' || m.last_name ELSE NULL END
 		FROM employees e

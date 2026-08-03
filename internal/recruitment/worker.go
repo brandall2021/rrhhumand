@@ -67,13 +67,21 @@ func autoAdvanceApplications(pool *pgxpool.Pool) {
 	log.Println("[recruitment] autoAdvanceApplications worker started")
 	for range ticker.C {
 		ctx := context.Background()
-		result, err := pool.Exec(ctx, `UPDATE applications SET stage_id = COALESCE((
-			SELECT ws.next_stage_id FROM workflow_stages ws
-			JOIN application_stages ast ON ast.stage_id = ws.id
-			WHERE ast.application_id = applications.id AND ws.next_stage_id IS NOT NULL
-			AND ws.auto_advance = TRUE
-			LIMIT 1
-		), stage_id) WHERE status = 'ACTIVE'`)
+		result, err := pool.Exec(ctx, `INSERT INTO application_stage_history (application_id, from_stage_id, to_stage_id, auto_transition)
+			SELECT h.application_id, h.to_stage_id, t.to_stage_id, true
+			FROM (
+				SELECT DISTINCT ON (application_id) application_id, to_stage_id
+				FROM application_stage_history
+				ORDER BY application_id, created_at DESC
+			) h
+			JOIN recruitment_stage_transitions t ON t.from_stage_id = h.to_stage_id
+			WHERE EXISTS (SELECT 1 FROM applications a WHERE a.id = h.application_id AND a.status = 'ACTIVE')
+			AND NOT EXISTS (
+				SELECT 1 FROM application_stage_history h2
+				WHERE h2.application_id = h.application_id
+				AND h2.from_stage_id = h.to_stage_id
+				AND h2.auto_transition = true
+			)`)
 		if err != nil {
 			log.Printf("[recruitment] autoAdvanceApplications error: %v", err)
 			continue

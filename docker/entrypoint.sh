@@ -15,12 +15,17 @@ if [ -n "$DATABASE_HOST" ]; then
     up_file="${dir}up.sql"
     if [ -f "$up_file" ]; then
       echo "  Applying: $up_file"
-      PGPASSWORD="${DATABASE_PASSWORD}" psql \
+      output=$(PGPASSWORD="${DATABASE_PASSWORD}" psql \
         -h "$DATABASE_HOST" \
         -p "${DATABASE_PORT:-5432}" \
         -U "${DATABASE_USER:-postgres}" \
         -d "${DATABASE_NAME:-rrhhumand}" \
-        -f "$up_file" 2>/dev/null || echo "  WARNING: migration may have failed (might be already applied)"
+        -v ON_ERROR_STOP=0 \
+        -f "$up_file" 2>&1 || true)
+      if printf '%s' "$output" | grep -q "^psql:.*ERROR:"; then
+        echo "  !!! Migration reported errors (check below):"
+        printf '%s\n' "$output" | grep "^psql:.*ERROR:" | head -10
+      fi
     fi
   done
   echo "Migrations complete."

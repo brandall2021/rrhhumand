@@ -687,8 +687,8 @@ func NewRouter(
 			protected.PUT("/expenses/policies/:id", expensesHandler.UpdatePolicy)
 			protected.POST("/expenses/policies/:id/rules", expensesHandler.CreateRule)
 			protected.GET("/expenses/policies/:id/rules", expensesHandler.ListRules)
-			protected.PUT("/expenses/policies/rules/:ruleId", expensesHandler.UpdateRule)
-			protected.DELETE("/expenses/policies/rules/:ruleId", expensesHandler.DeleteRule)
+			protected.PUT("/expenses/policies/:policyId/rules/:ruleId", expensesHandler.UpdateRule)
+			protected.DELETE("/expenses/policies/:policyId/rules/:ruleId", expensesHandler.DeleteRule)
 			protected.POST("/expenses/policies/evaluate", expensesHandler.EvaluateExpense)
 
 			// Approvals

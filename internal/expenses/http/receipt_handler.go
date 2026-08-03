@@ -51,9 +51,9 @@ func (h *Handler) ListReceipts(c *gin.Context) {
 }
 
 func (h *Handler) DeleteReceipt(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+	id, err := uuid.Parse(c.Param("receiptId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid receipt id"})
 		return
 	}
 	if err := h.ExpenseSvc.DeleteReceipt(c.Request.Context(), companyID(c), id); err != nil {

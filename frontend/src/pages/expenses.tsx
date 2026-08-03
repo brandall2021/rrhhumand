@@ -551,7 +551,7 @@ export default function ExpensesPage() {
     try {
       const body: Record<string, any> = {
         category_id: expenseForm.category_id,
-        expense_date: expenseForm.expense_date,
+        expense_date: expenseForm.expense_date ? expenseForm.expense_date + 'T00:00:00Z' : null,
         description: expenseForm.description,
         original_amount: expenseForm.original_amount,
         original_currency: expenseForm.original_currency,
@@ -717,8 +717,8 @@ export default function ExpensesPage() {
         title: travelForm.title,
         origin: travelForm.origin,
         destination: travelForm.destination,
-        departure_date: travelForm.departure_date,
-        return_date: travelForm.return_date,
+        departure_date: travelForm.departure_date ? travelForm.departure_date + 'T00:00:00Z' : null,
+        return_date: travelForm.return_date ? travelForm.return_date + 'T00:00:00Z' : null,
         currency: travelForm.currency,
       }
       if (travelForm.purpose) body.purpose = travelForm.purpose
@@ -774,7 +774,7 @@ export default function ExpensesPage() {
       const body: Record<string, any> = {
         requested_amount: advanceForm.requested_amount,
         currency: advanceForm.currency,
-        request_date: advanceForm.request_date,
+        request_date: advanceForm.request_date ? advanceForm.request_date + 'T00:00:00Z' : null,
       }
       await api.post('/expenses/advances', body)
       setShowAdvanceModal(false)
@@ -866,7 +866,7 @@ export default function ExpensesPage() {
     if (!rulePolicy) return
     if (!confirm('¿Eliminar esta regla?')) return
     try {
-      await api.delete(`/expenses/policies/rules/${r.id}`)
+      await api.delete(`/expenses/policies/${rulePolicy.id}/rules/${r.id}`)
       const res = await api.get(`/expenses/policies/${rulePolicy.id}/rules`)
       setRules(res.data.data ?? [])
     } catch (err: any) {

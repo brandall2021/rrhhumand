@@ -92,9 +92,9 @@ func (h *Handler) ListRules(c *gin.Context) {
 }
 
 func (h *Handler) UpdateRule(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
+	id, err := uuid.Parse(c.Param("ruleId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule id"})
 		return
 	}
 	var req domain.ExpensePolicyRule
@@ -111,17 +111,17 @@ func (h *Handler) UpdateRule(c *gin.Context) {
 }
 
 func (h *Handler) DeleteRule(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return
-	}
-	policyID, err := uuid.Parse(c.Param("policy_id"))
+	policyID, err := uuid.Parse(c.Param("policyId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
 	}
-	if err := h.PolicySvc.DeleteRule(c.Request.Context(), policyID, id); err != nil {
+	ruleID, err := uuid.Parse(c.Param("ruleId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule id"})
+		return
+	}
+	if err := h.PolicySvc.DeleteRule(c.Request.Context(), policyID, ruleID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

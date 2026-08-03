@@ -78,7 +78,7 @@ func (h *Handler) CreateRule(c *gin.Context) {
 }
 
 func (h *Handler) ListRules(c *gin.Context) {
-	policyID, err := uuid.Parse(c.Param("policy_id"))
+	policyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
